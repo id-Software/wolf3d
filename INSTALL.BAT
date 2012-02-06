@@ -1,0 +1,12 @@
+@echo off
+DEICE.EXE
+if ERRORLEVEL == 1 GOTO END
+WOLFSRC.EXE -d
+if ERRORLEVEL == 1 GOTO ERROR
+DEL WOLFSRC.EXE
+GO
+goto END
+:ERROR
+echo Error installing WOLFSRC.EXE!
+:END
+

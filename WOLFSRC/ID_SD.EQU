@@ -1,0 +1,38 @@
+;
+;	ID_SD.EQU
+;	Id Sound Manager assembly equates
+;
+
+	INCLUDE	'ID_VL.EQU'	; For screen color debugging stuff
+
+;	Modes
+sdm_Off				=	0
+sdm_PC				=	1
+sdm_AdLib			=	2
+
+smm_Off				=	0
+smm_AdLib			=	1
+
+sds_Off				=	0
+sds_SoundSource		=	1
+sds_SoundBlaster	=	2
+
+;	Stuff for the PC speaker
+pcTimer				=	42h
+pcTAccess			=	43h
+pcSpeaker			=	61h
+pcSpkBits			=	3
+
+;	Stuff for the AdLib
+;	Operator registers
+alChar				=	20h
+alScale				=	40h
+alAttack			=	60h
+alSus				=	80h
+alWave				=	0e0h
+;	Channel registers
+alFreqL				=	0a0h
+alFreqH				=	0b0h
+alFeedCon			=	0c0h
+;	Global registers
+alEffects			=	0bdh

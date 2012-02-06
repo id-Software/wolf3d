@@ -1,0 +1,692 @@
+;[]-----------------------------------------------------------------[]
+;|      RULES.ASI  --  Rules & Structures for assembler              |
+;|                                                                   |
+;|      Turbo C++ Run Time Library                                   |
+;|                                                                   |
+;|      Copyright (c) 1987, 1991 by Borland International Inc.       |
+;|      All Rights Reserved.                                         |
+;[]-----------------------------------------------------------------[]
+
+;*** First we begin with a few of the major constants of C.
+
+false   equ     0       ; Beware !  For incoming parameters, non-false = true.
+true    equ     1       ; For results, we generate the proper numbers.
+
+lesser  equ    -1       ; Incoming, lesser < 0
+equal   equ     0
+greater equ     1       ; Incoming, greater > 0
+
+	PAGE
+;[]------------------------------------------------------------[]
+;|                                                              |
+;|      Conditional Assembly Directives                         |
+;|                                                              |
+;[]------------------------------------------------------------[]
+
+;memory model aliases, for the convenience of building the library
+
+IFDEF           __s__
+__SMALL__       equ     1
+ENDIF
+
+IFDEF           __c__
+__COMPACT__     equ     1
+ENDIF
+
+IFDEF           __m__
+__MEDIUM__      equ     1
+ENDIF
+
+IFDEF           __l__
+__LARGE__       equ     1
+ENDIF
+
+IFDEF           __h__
+__HUGE__        equ     1
+ENDIF
+
+IFNDEF __TINY__
+    IFNDEF __SMALL__
+	IFNDEF __MEDIUM__
+	    IFNDEF __COMPACT__
+		IFNDEF __LARGE__
+		    IFNDEF __HUGE__
+			%OUT  You must supply a model symbol.
+			.ERR
+		    ENDIF
+		ENDIF
+	    ENDIF
+	ENDIF
+    ENDIF
+ENDIF
+
+;bit masks to extract default pointer types from MMODEL (at run-time)
+FCODE           equ     8000h
+FDATA           equ     4000h
+
+IFDEF   __TINY__                ; Small Code - Small Data
+	LPROG           equ     false
+	LDATA           equ     false
+	MMODEL          equ     0       
+	_DSSTACK_       equ     <>
+ENDIF
+
+IFDEF   __SMALL__               ; Small Code - Small Data
+	LPROG           equ     false
+	LDATA           equ     false
+	MMODEL          equ     1       
+	_DSSTACK_       equ     <>
+ENDIF
+
+IFDEF   __MEDIUM__              ; Large Code - Small Data
+	LPROG           equ     true
+	LDATA           equ     false
+	MMODEL          equ     FCODE+2 
+	_DSSTACK_       equ     <>
+ENDIF
+
+IFDEF   __COMPACT__             ; Small Code - Large Data
+	LPROG           equ     false
+	LDATA           equ     true
+	MMODEL          equ     FDATA+3 
+ENDIF
+
+IFDEF   __LARGE__               ; Large Code - Large Data
+	LPROG           equ     true
+	LDATA           equ     true
+	MMODEL          equ     FCODE+FDATA+4
+ENDIF
+
+IFDEF   __HUGE__                ; Large Code - Large Data
+	LPROG           equ     true
+	LDATA           equ     true
+	MMODEL          equ     FCODE+FDATA+5
+ENDIF
+
+IF      LPROG
+	DIST            equ     FAR
+ELSE
+	DIST            equ     NEAR
+ENDIF
+
+	PAGE
+;[]------------------------------------------------------------[]
+;|                                                              |
+;|      Segment Declarations Macros                             |
+;|                                                              |
+;[]------------------------------------------------------------[]
+
+Code_Seg@       MACRO           ;; Open a Code Segment
+IFDEF __WINDOWS__
+_TEXT   SEGMENT WORD PUBLIC 'CODE'
+ELSE
+_TEXT   SEGMENT BYTE PUBLIC 'CODE'
+ENDIF
+	ASSUME  CS:_TEXT
+		ENDM
+
+Code_EndS@      MACRO           ;; Close a Code Segment
+_TEXT   ENDS
+		ENDM
+
+Data_Seg@       MACRO           ;; Open a Data Segment  (initialized)
+_DATA   SEGMENT WORD PUBLIC 'DATA'
+		ENDM
+
+Data_EndS@      MACRO           ;; Close a Data Segment (initialized)
+_DATA   ENDS
+		ENDM
+
+IFNDEF __HUGE__
+    BSS_Seg@        MACRO       ;; Open a Data Segment  (un-initialized)
+    _BSS    SEGMENT WORD PUBLIC 'BSS'
+	    ENDM
+
+    BSS_EndS@       MACRO       ;; Close a Data Segment (un-initialized)
+    _BSS    ENDS
+		    ENDM
+ENDIF
+
+FarData_Seg@    MACRO           ;; Open a FAR Data Segment
+_FARDATA        SEGMENT PARA PUBLIC 'FAR_DATA'
+		ENDM
+
+FarData_EndS@   MACRO           ;; Close a FAR Data Segment
+_FARDATA        ENDS
+		ENDM
+
+FarBSS_Seg@     MACRO           ;; Open a FAR BSS Segment
+_FARBSS         SEGMENT PARA PUBLIC 'FAR_BSS'
+		ENDM
+
+FarBSS_EndS@    MACRO           ;; Close a FAR BSS Segment
+_FARBSS         ENDS
+		ENDM
+
+Const_Seg@      MACRO           ;; Open a CONST Segment
+_CONST  SEGMENT WORD PUBLIC 'CONST'
+		ENDM
+
+Const_EndS@     MACRO           ;; Close a CONST Segment
+_CONST  ENDS
+		ENDM
+
+Init_Seg@       MACRO           ;; Open a INIT Segment
+_INIT_  SEGMENT WORD PUBLIC 'INITDATA'
+		ENDM
+
+Init_EndS@      MACRO           ;; Close a INIT Segment
+_INIT_  ENDS
+		ENDM
+
+Exit_Seg@       MACRO           ;; Open a EXIT Segment
+_EXIT_  SEGMENT WORD PUBLIC 'EXITDATA'
+		ENDM
+
+Exit_EndS@      MACRO           ;; Close a EXIT Segment
+_EXIT_  ENDS
+		ENDM
+
+CVT_Seg@        MACRO
+_CVTSEG SEGMENT WORD PUBLIC 'DATA'
+		ENDM
+
+CVT_EndS@       MACRO
+_CVTSEG ENDS
+		ENDM
+
+SCN_Seg@        MACRO
+_SCNSEG SEGMENT WORD PUBLIC 'DATA'
+		ENDM
+
+SCN_EndS@       MACRO
+_SCNSEG ENDS
+		ENDM
+
+Header@ MACRO
+Code_Seg@
+Code_EndS@
+Data_Seg@
+Data_EndS@
+BSS_Seg@
+BSS_EndS@
+	ASSUME  CS:_TEXT, DS:DGROUP
+	ENDM
+
+;[]------------------------------------------------------------[]
+;|                                                              |
+;|      Segment Definitions                                     |
+;|                                                              |
+;[]------------------------------------------------------------[]
+
+IFDEF __C0__
+
+IFDEF __WINDOWS__
+_TEXT           SEGMENT WORD PUBLIC 'CODE'
+		ENDS
+ELSE
+_TEXT           SEGMENT BYTE PUBLIC 'CODE'
+		ENDS
+ENDIF
+
+_FARDATA        SEGMENT PARA PUBLIC 'FAR_DATA'
+		ENDS
+
+_FARBSS         SEGMENT PARA PUBLIC 'FAR_BSS'
+		ENDS
+
+IFNDEF __WINDOWS__
+  IFNDEF __TINY__
+  _OVERLAY_       SEGMENT PARA PUBLIC 'OVRINFO'
+		  ENDS
+  _1STUB_         SEGMENT PARA PUBLIC 'STUBSEG'
+		  ENDS
+  ENDIF
+ENDIF
+
+IFDEF __WINDOWS__
+NULL            SEGMENT PARA PUBLIC 'BEGDATA'
+		ENDS
+ENDIF
+
+_DATA           SEGMENT PARA PUBLIC 'DATA'
+		ENDS
+		ENDS
+
+_CONST          SEGMENT WORD PUBLIC 'CONST'
+		ENDS
+
+IFDEF __WINDOWS__
+_FPSEG          SEGMENT WORD PUBLIC 'DATA'
+		ENDS
+ENDIF
+
+_CVTSEG         SEGMENT WORD PUBLIC 'DATA'
+		ENDS
+
+_SCNSEG         SEGMENT WORD PUBLIC 'DATA'
+		ENDS
+
+_INIT_          SEGMENT WORD PUBLIC 'INITDATA'
+InitStart       label byte
+		ENDS
+_INITEND_       SEGMENT BYTE PUBLIC 'INITDATA'
+InitEnd         label byte
+		ENDS
+
+_EXIT_          SEGMENT WORD PUBLIC 'EXITDATA'
+ExitStart       label byte
+		ENDS
+_EXITEND_       SEGMENT BYTE PUBLIC 'EXITDATA'
+ExitEnd         label byte
+		ENDS
+
+IFNDEF __HUGE__
+_BSS          SEGMENT WORD PUBLIC 'BSS'
+BeginBSS      label byte
+	      ENDS
+_BSSEND       SEGMENT BYTE PUBLIC 'BSSEND'
+EndBSS        label byte
+	      ENDS
+ENDIF
+
+
+IFDEF __WINDOWS__
+
+  IFDEF  __HUGE__
+  DGROUP GROUP NULL,_DATA,_CONST,_FPSEG,_CVTSEG,_SCNSEG,_INIT_,_INITEND_,_EXIT_,_EXITEND_
+  ELSE
+  DGROUP GROUP NULL,_DATA,_CONST,_FPSEG,_CVTSEG,_SCNSEG,_INIT_,_INITEND_,_EXIT_,_EXITEND_,_BSS,_BSSEND
+  ENDIF
+
+ELSE
+
+IFNDEF __NOFLOAT__
+  IF LDATA
+    IFDEF  __HUGE__
+      DGROUP GROUP _DATA,_CONST,_CVTSEG,_SCNSEG,_INIT_,_INITEND_,_EXIT_,_EXITEND_
+    ELSE
+      DGROUP GROUP _DATA,_CONST,_CVTSEG,_SCNSEG,_INIT_,_INITEND_,_EXIT_,_EXITEND_,_BSS,_BSSEND
+    ENDIF
+  ELSE
+    IFDEF __TINY__
+      DGROUP GROUP _TEXT,_DATA,_CONST,_CVTSEG,_SCNSEG,_INIT_,_INITEND_,_EXIT_,_EXITEND_,_BSS,_BSSEND
+    ELSE
+      DGROUP GROUP _DATA,_CONST,_CVTSEG,_SCNSEG,_INIT_,_INITEND_,_EXIT_,_EXITEND_,_BSS,_BSSEND
+    ENDIF
+  ENDIF
+ELSE
+  IF LDATA
+    IFDEF __HUGE__
+      DGROUP GROUP _DATA,_CONST,_CVTSEG,_SCNSEG,_INIT_,_INITEND_,_EXIT_,_EXITEND_
+    ELSE
+      DGROUP GROUP _DATA,_CONST,_CVTSEG,_SCNSEG,_BSS,_BSSEND
+    ENDIF
+  ELSE
+    IFDEF __TINY__
+      DGROUP GROUP _TEXT,_DATA,_CONST,_CVTSEG,_SCNSEG,_INIT_,_INITEND_,_EXIT_,_EXITEND_,_BSS,_BSSEND
+    ELSE
+      DGROUP GROUP _DATA,_CONST,_CVTSEG,_SCNSEG,_INIT_,_INITEND_,_EXIT_,_EXITEND_,_BSS,_BSSEND
+    ENDIF
+  ENDIF
+ENDIF ; __NOFLOAT__
+
+ENDIF ; __WINDOWS__
+
+ELSE
+
+Code_Seg@
+Code_EndS@
+Data_Seg@
+Data_EndS@
+DGROUP GROUP _DATA
+
+ENDIF ; __C0__
+
+	PAGE
+;[]------------------------------------------------------------[]
+;|                                                              |
+;|      Old Segment Declarations Macros                         |
+;|                                                              |
+;[]------------------------------------------------------------[]
+
+
+CSeg@           MACRO           ;; Open a Code Segment
+IFDEF __WINDOWS__
+_TEXT   SEGMENT WORD PUBLIC 'CODE'
+ELSE
+_TEXT   SEGMENT BYTE PUBLIC 'CODE'
+ENDIF
+	ASSUME  CS:_TEXT
+		ENDM
+
+CSegEnd@        MACRO           ;; Close a Code Segment
+_TEXT   ENDS
+		ENDM
+
+DSeg@           MACRO           ;; Open a Data Segment  (initialized)
+_DATA   SEGMENT WORD PUBLIC 'DATA'
+		ENDM
+
+DSegEnd@        MACRO           ;; Close a Data Segment (initialized)
+_DATA   ENDS
+		ENDM
+
+IFDEF __BSS__
+    IFNDEF __HUGE__
+	BSeg@           MACRO           ;; Open a Data Segment  (un-initialized)
+	_BSS    SEGMENT WORD PUBLIC 'BSS'
+		ENDM
+
+	BSegEnd@        MACRO           ;; Close a Data Segment (un-initialized)
+	_BSS    ENDS
+			ENDM
+    ENDIF
+ENDIF
+
+Header@ MACRO
+IFDEF __WINDOWS__
+_TEXT   SEGMENT WORD PUBLIC 'CODE'
+ELSE
+_TEXT   SEGMENT BYTE PUBLIC 'CODE'
+ENDIF
+_TEXT   ENDS
+_DATA   SEGMENT WORD PUBLIC 'DATA'
+_DATA   ENDS
+IFDEF __BSS__
+    IFNDEF  __HUGE__
+	_BSS    SEGMENT WORD PUBLIC 'BSS'
+	_BSS    ENDS
+    ENDIF
+ENDIF
+
+	ASSUME  CS:_TEXT, DS:DGROUP
+	ENDM
+
+	PAGE
+;[]------------------------------------------------------------[]
+;|                                                              |
+;|      C Naming Convention Macros                              |
+;|                                                              |
+;[]------------------------------------------------------------[]
+
+UNDERSCORE      EQU     1
+
+ExtSym@ MACRO   Sym, sType, sName
+	IFNB    <sName>
+	IFIDN   <sName>, <__PASCAL__>
+NAMING      =       0
+	ELSE
+NAMING      =       UNDERSCORE
+	ENDIF
+	ENDIF
+	IF      NAMING
+	EXTRN   _&Sym : sType
+Sym&@   equ     _&Sym
+	ELSE
+	EXTRN   Sym : sType
+Sym&@   equ     Sym
+	ENDIF
+	ENDM
+
+PubSym@ MACRO   Sym, Definition, sName
+	IFNB    <sName>
+	IFIDN   <sName>, <__PASCAL__>
+NAMING      =       0
+	ELSE
+NAMING      =       UNDERSCORE
+	ENDIF
+	ENDIF
+	IF      NAMING
+	PUBLIC  _&Sym
+_&Sym   Definition
+Sym&@   equ     _&Sym
+	ELSE
+	PUBLIC  Sym
+Sym     Definition
+Sym&@   equ     Sym
+	ENDIF
+	ENDM
+
+Static@ MACRO   Sym, Definition, sName
+	IFNB    <sName>
+	IFIDN   <sName>, <__PASCAL__>
+NAMING      =       0
+	ELSE
+NAMING      =       UNDERSCORE
+	ENDIF
+	ENDIF
+	IF      NAMING
+_&Sym   Definition
+Sym&@   equ     _&Sym
+	ELSE
+Sym     Definition
+Sym&@   equ     Sym
+	ENDIF
+	ENDM
+
+	PAGE
+;[]------------------------------------------------------------[]
+;|                                                              |
+;|      Macros which are Data Size Dependent                    |
+;|                                                              |
+;[]------------------------------------------------------------[]
+
+IF      LDATA
+DPTR_           equ     DWORD PTR
+dPtrSize        equ     4
+LES_            equ     LES
+ES_             equ     ES:
+SS_             equ     SS:
+LDS_            equ     LDS
+
+pushDS_         MACRO
+		PUSH    DS
+		ENDM
+
+popDS_          MACRO
+		POP    DS
+		ENDM
+
+PushPtr         MACRO   dPtrOff, dPtrSeg
+		PUSH    dPtrSeg
+		PUSH    dPtrOff
+		ENDM
+
+
+dPtr@           MACRO   Sym, VALUE, sName       ;; Static Data pointer
+Static@         Sym, <DD        VALUE>, sName
+		ENDM
+
+dPtrPub@        MACRO   Sym, VALUE, sName       ;; Global Data Pointer
+PubSym@         Sym, <DD        VALUE>, sName
+		ENDM
+
+dPtrExt@        MACRO   Sym, sName      ;; External Data Pointer
+ExtSym@         Sym, DWORD, sName
+		ENDM
+ELSE
+DPTR_           equ     WORD PTR
+dPtrSize        equ     2
+LES_            equ     MOV
+ES_             equ     DS:
+SS_             equ     DS:
+LDS_            equ     MOV
+
+pushDS_         MACRO
+		ENDM
+
+popDS_          MACRO
+		ENDM
+
+PushPtr         MACRO   dPtrOff, dPtrSeg
+		PUSH    dPtrOff
+		ENDM
+
+dPtr@           MACRO   Sym, VALUE, sName       ;; Static Data pointer
+Static@         Sym, <DW        VALUE>, sName
+		ENDM
+
+dPtrPub@        MACRO   Sym, VALUE, sName       ;; Global Data Pointer
+PubSym@         Sym, <DW        VALUE>, sName
+		ENDM
+
+dPtrExt@        MACRO   Sym, sName      ;; External Data Pointer
+ExtSym@         Sym, WORD, sName
+		ENDM
+ENDIF
+	PAGE
+;[]------------------------------------------------------------[]
+;|                                                              |
+;|      Macros which are Code Size Dependent                    |
+;|                                                              |
+;[]------------------------------------------------------------[]
+
+IF      LPROG
+CPTR_           equ     DWORD PTR
+cPtrSize        equ     4
+
+Proc@           MACRO   Sym, sName      ;; Open a Static function
+Static@         Sym, <PROC      FAR>, sName
+		ENDM
+
+PubProc@        MACRO   Sym, sName      ;; Open a Public function
+PubSym@         Sym, <PROC      FAR>, sName
+		ENDM
+
+ExtProc@        MACRO   Sym, sName      ;; External Function
+ExtSym@         Sym, FAR, sName
+		ENDM
+
+cPtr@           MACRO   Sym, VALUE, sName       ;; Static Function pointer
+Static@         Sym, <DD        VALUE>, sName
+		ENDM
+
+cPtrPub@        MACRO   Sym, VALUE, sName;; Global Function Pointer
+PubSym@         Sym, <DD        VALUE>, sName
+		ENDM
+
+cPtrExt@        MACRO   Sym, sName      ;; External Function Pointer
+ExtSym@         Sym, DWORD, sName
+		ENDM
+ELSE
+CPTR_           equ     WORD PTR
+cPtrSize        equ     2
+
+Proc@           MACRO   Sym, sName      ;; Open a Static function
+Static@         Sym, <PROC      NEAR>, sName
+		ENDM
+
+PubProc@        MACRO   Sym, sName      ;; Open a Public function
+PubSym@         Sym, <PROC      NEAR>, sName
+		ENDM
+
+ExtProc@        MACRO   Sym, sName      ;; External Function
+ExtSym@         Sym, NEAR, sName
+		ENDM
+
+cPtr@           MACRO   Sym, VALUE, sName       ;; Static Function pointer
+Static@         Sym, <DW        VALUE>, sName
+		ENDM
+
+cPtrPub@        MACRO   Sym, VALUE, sName       ;; Global Function Pointer
+PubSym@         Sym, <DW        VALUE>, sName
+		ENDM
+
+cPtrExt@        MACRO   Sym, sName      ;; External Function Pointer
+ExtSym@         Sym, WORD, sName
+		ENDM
+ENDIF
+
+EndProc@        MACRO   Sym, sName      ;; Close a function
+Static@         Sym, ENDP, sName
+		ENDM
+
+	PAGE
+;[]------------------------------------------------------------[]
+;|                                                              |
+;|      Miscellaneous Definitions                               |
+;|                                                              |
+;[]------------------------------------------------------------[]
+
+;*** Set up some macros for procedure parameters and export/import
+
+nearCall        STRUC
+nearBP          dw      ?
+nearIP          dw      ?
+nearParam       dw      ?
+nearCall        ENDS
+
+farCall         STRUC
+farBP           dw      ?
+farCSIP         dd      ?
+aParam          dw      ?
+farCall         ENDS
+
+;*** Next, we define some convenient structures to access the parts
+;       of larger objects.
+
+_twoBytes       STRUC
+BY0     db      ?
+BY1     db      ?
+_twoBytes       ENDS
+
+_fourWords      STRUC
+W0      dw      ?
+W1      dw      ?
+W2      dw      ?
+W3      dw      ?
+_fourWords      ENDS
+
+_twoDwords      STRUC
+DD0     dd      ?
+DD1     dd      ?
+_twoDwords      ENDS
+
+_aFloat         STRUC
+double          dq      ?
+_aFloat         ENDS
+
+; How to invoke MSDOS.
+
+MSDOS@  MACRO
+	int     21h
+	ENDM
+	PAGE
+
+; The next section concerns the use of registers.  SI and DI are used
+;       for register variables, and must be conserved.
+
+; Registers AX, BX, CX, DX will not be preserved across function calls.
+
+; Firstly, the registers to be conserved through function calls, including
+;       the setup of local variables.
+
+link@   MACRO   _si,_di,_ES,locals
+	push    bp
+	mov     bp, sp
+	IFNB    <locals>
+		lea     sp, locals
+	ENDIF
+	IFNB    <_si>
+		push    si
+	ENDIF
+	IFNB    <_di>
+		push    di
+	ENDIF
+ENDM
+
+unLink@ MACRO   _si,_di,_ES,locals
+	IFNB    <_di>
+		pop     di
+	ENDIF
+	IFNB    <_si>
+		pop     si
+	ENDIF
+	IFNB    <locals>
+		mov     sp, bp
+	ENDIF
+	pop     bp
+ENDM
+
+.LIST

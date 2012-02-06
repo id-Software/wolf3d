@@ -1,0 +1,53 @@
+We are releasing this code for the entertainment of the 
+user community.  We don't guarentee that anything even 
+builds in here.  Projects just seem to rot when you leave 
+them alone for long periods of time.
+
+This is all the source we have relating to the original 
+PC wolfenstein 3D project.  We haven't looked at this 
+stuff in years, and I would probably be horribly embarassed 
+to dig through my old code, so please don't ask any questions 
+about it. The original project was built in borland c++ 3.0.  
+I think some minor changes were required for later versions.
+
+You will need the data from a released version of wolf or spear 
+to use the exe built from this code.  You can just use a 
+shareware version if you are really cheap.
+
+
+Some coding comments in retrospect:
+
+The ray casting refresh architecture is still reasonably 
+appropriate for the game.  A BSP based texture mapper could 
+go faster, but ray casting was a lot simpler to do at the time.
+
+The dynamically compiled scaling routines are now a Bad Thing.  
+On uncached machines (the original target) they are the fastest 
+possible way to scale walls, but on modern processors you just 
+wind up thrashing the code cash and wrecking performance.  
+A simple looping texture mapper would be faster on 486+ machines.
+
+The whole page manager caching scheme is unecessarily complex.
+
+Way too many #ifdefs in the code!
+
+
+Some project ideas with this code:
+
+Add new monsters or weapons.
+
+Add taller walls and vertical motion.   This should only be 
+done if the texture mapper is rewritten.
+
+Convert to a 32 bit compiler.  This would be a fair amount 
+of work, but I would hate to even mess with crusty old 16 
+bit code.  The code would get a LOT smaller.
+
+Make a multi-player game that runs on DOOM sersetup / ipxsetup drivers.
+
+
+Have fun...
+
+John Carmack
+Technical Director
+Id Software
