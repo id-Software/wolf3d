@@ -1,10 +1,16 @@
 Wolfenstein 3D
 ==============
 
-The original source release was made using the DEICE.EXE installer (DeIce) in the root directory.  (Basically a way to split self-extracting zip files over multiple floppy disks.)  After execution, that installer will create the contents of the WOLFSRC directory.  In the "installed" directory, the the README.TXT, RELEASE.TXT, and LICENCE.DOC reside in the README directory.  They are duplicated below.
+The original source release was made using the ``DEICE.EXE``
+installer (DeIce) in the root directory.  (Basically a way to
+split self-extracting zip files over multiple floppy disks.)
+After execution, that installer will create the contents of
+the ``WOLFSRC`` directory.  In the "installed" directory, the
+the ``README.TXT``, ``RELEASE.TXT``, and ``LICENCE.DOC`` reside
+in the ``README`` directory.  They are duplicated below.
 
-Travis "Ash" Bradshaw
-travis.bradshaw@idsoftware.com
+Travis "Ash" Bradshaw <travis.bradshaw@idsoftware.com>
+
 February 6, 2012
 
 RELEASE.TXT
