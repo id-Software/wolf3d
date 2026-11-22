@@ -49,10 +49,15 @@ Every Rn.m document must specify: purpose, in/out scope, prerequisites, affected
 6. Mark **PASS / FAIL / PARTIAL / NOT RUN** for each criterion. Block milestone closure on critical FAIL/PARTIAL/NOT RUN.
 7. Record exceptions as approved ADRs with their consequences, never silently suppress tests.
 
+
+## Agent continuity and automation-first development
+
+`AGENTS.md` is the shared entry point for Codex, Gemma/OpenCode and future agents. `docs/automation/PLAYBOOK.md` is the reusable operations register. **Before re-solving a task**, agents must inspect existing scripts, test fixtures, acceptance evidence and documented commands. When a procedure repeats, or will recur predictably, it should become one canonical, tested command or documented manual checklist. Do not duplicate tools or rely on chat context for project state. Every revision must record whether it discovered or automated repeated work and leave a concrete handoff for the next agent. Automation remains bounded, non-destructive and must never silently approve gates, suppress test failures or merge PRs.
+
 ## Recommended starting point
 
 Implement **R0.1 first**, based on actual repository source and runtime rather than assumptions. Then author R0.2–R0.7 test fixtures. Do not start IP deletion or a large Workshop UI rewrite first.
 
 Reference methodology: Ironclaw3D docs/M10_VALIDATION.md, docs/M3_VALIDATION.md, tools/test.sh, and docs/ENGINE_MODERNISATION_CHECKLIST.md. These are examples of evidence/reporting; do not copy its renderer, architecture, game features or performance thresholds uncritically.
 
-See [R0 contract](milestones/R0/PLAN.md), [validation design](validation/TEST_STRATEGY.md), [original content/IP](ORIGINAL_CONTENT_AND_IP.md), and [Workshop](WORKSHOP_DESIGN.md).
+See [AGENTS.md](../AGENTS.md), [automation playbook](automation/PLAYBOOK.md), [R0 contract](milestones/R0/PLAN.md), [validation design](validation/TEST_STRATEGY.md), [original content/IP](ORIGINAL_CONTENT_AND_IP.md), and [Workshop](WORKSHOP_DESIGN.md).
