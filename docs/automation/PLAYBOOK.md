@@ -275,8 +275,9 @@ tools/test.sh --all
 - `WOLF3D_UPDATE_BASELINES` is stripped from job environments.
 - JSON summary: `build/validation/<milestone>/<run-id>/summary.json` (schema v1).
 - CI workflow `.github/workflows/validation.yml` runs R0.6 mandatory synthetic
-  tests on push/PR; sanitizer/perf/owned-data/GPU are not default CI gates.
-  CI pass is not claimed until a real workflow run confirms it.
+  tests on push to `docs/revival-roadmap-and-validation` and PRs targeting
+  `master`; sanitizer/perf/owned-data/GPU are not default CI gates. CI pass is
+  not claimed until a real workflow run confirms it.
 
 ## Required script contract
 

@@ -160,3 +160,91 @@ class ValidationRunnerTests(unittest.TestCase):
         proc = subprocess.run([sys.executable, str(RUNNER_PATH), "R0.3", "--dry-run"], capture_output=True, text=True)
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertIn("r03-engine-synthetic", proc.stdout)
+
+    def test_timeout_cleanup_parent_and_child_running(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            pidfile = run_dir / "child.pid"
+            cmd = [sys.executable, "-c",
+                   "import subprocess,sys,time,os;"
+                   "p=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)']);"
+                   f"open(r'{pidfile}','w').write(str(p.pid));"
+                   "time.sleep(60)"]
+            job = self.make_job(command=cmd, timeout=2)
+            r = self.runner.run_job(job, run_dir)
+            self.assertEqual(r.status, "TIMEOUT")
+            self.assertTrue(pidfile.exists())
+            child_pid = int(pidfile.read_text().strip())
+            for _ in range(30):
+                try:
+                    os.kill(child_pid, 0)
+                    time.sleep(0.1)
+                except ProcessLookupError:
+                    break
+            else:
+                self.fail(f"child still alive {child_pid}")
+
+    def test_cleanup_parent_exited_child_still_running(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            pidfile = run_dir / "grandchild.pid"
+            # Direct child spawns a grandchild in same process group, writes pid, exits.
+            cmd = [sys.executable, "-c",
+                   "import subprocess,sys,time;"
+                   "p=subprocess.Popen([sys.executable,'-c','import time,sys; sys.stdout.write(\\'x\\n\\'); sys.stdout.flush(); time.sleep(60)']);"
+                   f"open(r'{pidfile}','w').write(str(p.pid));"]
+            job = self.make_job(command=cmd, timeout=10)
+            r = self.runner.run_job(job, run_dir)
+            self.assertIn(r.status, ("PASS", "FAIL", "TIMEOUT"))
+            self.assertTrue(pidfile.exists())
+            gpid = int(pidfile.read_text().strip())
+            for _ in range(40):
+                try:
+                    os.kill(gpid, 0)
+                    time.sleep(0.1)
+                except ProcessLookupError:
+                    break
+            else:
+                try:
+                    os.kill(gpid, 9)
+                except Exception:
+                    pass
+                self.fail(f"grandchild still alive {gpid}")
+
+    def test_timeout_child_ignores_sigterm(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            pidfile = run_dir / "child.pid"
+            cmd = [sys.executable, "-c",
+                   "import signal,time,os,sys;"
+                   "signal.signal(signal.SIGTERM, signal.SIG_IGN);"
+                   f"open(r'{pidfile}','w').write(str(os.getpid())); sys.stdout.flush();"
+                   "time.sleep(60)"]
+            job = self.make_job(command=cmd, timeout=2)
+            start = time.time()
+            r = self.runner.run_job(job, run_dir)
+            self.assertEqual(r.status, "TIMEOUT")
+            self.assertLess(time.time() - start, 20)
+            if pidfile.exists():
+                pid = int(pidfile.read_text().strip())
+                for _ in range(30):
+                    try:
+                        os.kill(pid, 0)
+                        time.sleep(0.1)
+                    except ProcessLookupError:
+                        break
+                else:
+                    try:
+                        os.kill(pid, 9)
+                    except Exception:
+                        pass
+                    self.fail(f"child still alive {pid}")
+
+    def test_kill_process_group_already_gone(self):
+        # Should be a no-op / not raise.
+        proc = subprocess.Popen([sys.executable, "-c", "pass"], start_new_session=True)
+        proc.wait(timeout=10)
+        pgid = proc.pid
+        # group may or may not be gone; call should be safe either way
+        self.runner.kill_process_group(proc, pgid)
+        self.runner.kill_process_group(proc, pgid)

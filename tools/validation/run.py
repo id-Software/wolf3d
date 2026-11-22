@@ -223,36 +223,80 @@ def select_jobs(jobs: list[Job], milestone: str, categories: set[str] | None = N
     return out
 
 
-def kill_process_group(proc: subprocess.Popen) -> None:
-    if proc.poll() is not None:
-        return
+def _pgid_alive(pgid: int) -> bool:
     try:
-        os.killpg(proc.pid, signal.SIGTERM)
+        os.killpg(pgid, 0)
+        return True
     except ProcessLookupError:
-        return
+        return False
+    except PermissionError:
+        return True
     except Exception:
+        return False
+
+
+def kill_process_group(proc: subprocess.Popen, pgid: int | None = None) -> None:
+    """Best-effort bounded cleanup of a job process group.
+
+    The direct child is always reaped. Group signals are only sent to the
+    captured pgid (proc.pid at start_new_session launch) and guarded by liveness
+    checks to avoid targeting reused process-group IDs.
+    """
+    if pgid is None:
+        pgid = proc.pid
+
+    def _term_group() -> None:
+        if not _pgid_alive(pgid):
+            return
         try:
-            proc.terminate()
+            os.killpg(pgid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
         except Exception:
             pass
+
+    def _kill_group() -> None:
+        if not _pgid_alive(pgid):
+            return
+        try:
+            os.killpg(pgid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+        except Exception:
+            pass
+
+    # Escalate even if parent already exited: descendants may still run.
+    _term_group()
     try:
         proc.wait(timeout=5)
-        return
-    except Exception:
-        pass
-    try:
-        os.killpg(proc.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        return
+    except subprocess.TimeoutExpired:
+        _kill_group()
+        try:
+            proc.kill()
+        except Exception:
+            pass
+        try:
+            proc.wait(timeout=5)
+        except Exception:
+            pass
     except Exception:
         try:
             proc.kill()
         except Exception:
             pass
-    try:
-        proc.wait(timeout=5)
-    except Exception:
-        pass
+        try:
+            proc.wait(timeout=5)
+        except Exception:
+            pass
+
+    # Final bounded check: if group remains alive (e.g. descendant ignored TERM
+    # and direct child already reaped), send KILL once more.
+    if _pgid_alive(pgid):
+        _kill_group()
 
 
 def run_job(job: Job, run_dir: Path) -> JobResult:
@@ -301,7 +345,7 @@ def run_job(job: Job, run_dir: Path) -> JobResult:
                 job.command,
                 cwd=ROOT,
                 env=env,
-                stdout=subprocess.PIPE,
+                stdout=log,
                 stderr=subprocess.STDOUT,
                 text=True,
                 start_new_session=True,
@@ -315,28 +359,26 @@ def run_job(job: Job, run_dir: Path) -> JobResult:
             return JobResult(job.id, job.milestone, job.description, job.command, job.category,
                              job.mandatory, job.timeout, STATUS_FAIL, None, duration, started_at, ended_at,
                              _display_path(log_path), msg)
+        pgid = proc.pid
         try:
+            proc.wait(timeout=job.timeout)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            kill_process_group(proc, pgid)
             try:
-                out, _ = proc.communicate(timeout=job.timeout)
-            except subprocess.TimeoutExpired:
-                timed_out = True
-                kill_process_group(proc)
-                try:
-                    out, _ = proc.communicate(timeout=10)
-                except Exception:
-                    out = ""
-                    try:
-                        proc.wait(timeout=5)
-                    except Exception:
-                        pass
-            except KeyboardInterrupt:
-                kill_process_group(proc)
-                raise
-            if out:
-                log.write(out)
+                proc.wait(timeout=5)
+            except Exception:
+                pass
         except KeyboardInterrupt:
-            kill_process_group(proc)
+            kill_process_group(proc, pgid)
+            try:
+                proc.wait(timeout=5)
+            except Exception:
+                pass
             raise
+        # Best-effort cleanup for descendants that outlive the direct child.
+        if _pgid_alive(pgid):
+            kill_process_group(proc, pgid)
 
         exit_code = proc.returncode
         if timed_out:

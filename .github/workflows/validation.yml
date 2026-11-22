@@ -4,7 +4,8 @@ on:
   push:
     branches: [docs/revival-roadmap-and-validation]
   pull_request:
-    branches: [docs/revival-roadmap-and-validation]
+    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: read
