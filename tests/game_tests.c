@@ -351,7 +351,7 @@ static void TestMenuGame(void)
 int main(int argc,char **argv)
 {
     CHECK(argc>=2);TestExpand();TestFixed();TestScale();MM_Startup();CHECK(!GameProbe());CHECK(CA_Startup(argv[1]));
-    CHECK(VL_SetPalette(gamepal,768));TestInputMenu();TestWorld(argc==2,argc>3 ? argv[3] : NULL);TestMapBounds();if(argc==2) TestDoors();TestSimulation();TestRestart();if(argc>2) TestOwnedWalk();TestMenuGame();
+    CHECK(VL_SetPalette(gamepal,768));TestInputMenu();TestWorld(argc==2,argc>3 ? argv[3] : NULL);TestMapBounds();if(argc==2) TestDoors();TestSimulation();if(argc==2) TestRestart();if(argc>2) TestOwnedWalk();TestMenuGame();
     GameStop();CA_Shutdown();MM_Shutdown();CHECK(!MM_TotalBytes());
     puts("Original map/VSWAP, fixed-point ray/scaler, movement and menu/game tests passed.");return 0;
 }
