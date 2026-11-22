@@ -178,17 +178,54 @@ def validate_manifest(actual: dict, expected_path: Path, capture_directory: Path
     if expected_entries.keys() != actual_entries.keys():
         raise ValueError("metadata mismatch: capture ID set")
     with zipfile.ZipFile(archive_path) as archive:
-        for capture_id in sorted(expected_entries):
-            left, right = dict(expected_entries[capture_id]), dict(actual_entries[capture_id])
-            expected_hash, actual_hash = left.pop("pixel_hash"), right.pop("pixel_hash")
-            compare_metadata(left, right)
-            if expected_hash == actual_hash:
-                continue
-            baseline = _read_indexed_data(archive.read(capture_id + ".w3i"), capture_id)
-            candidate = read_indexed(capture_directory / (capture_id + ".w3i"))
-            difference = compare_pixels(baseline, candidate)
+        names = archive.namelist()
+        if len(names) != len(set(names)):
+            duplicates = sorted(name for name in set(names) if names.count(name) > 1)
+            raise ValueError(f"baseline archive: duplicate entries {duplicates}")
+        unexpected_names = sorted(
+            name for name in names
+            if not name.endswith(".w3i") or "/" in name or "\\" in name
+        )
+        if unexpected_names:
+            raise ValueError(f"baseline archive: unexpected entries {unexpected_names}")
+        archived_ids = {name[:-4] for name in names}
+        missing = sorted(expected_entries.keys() - archived_ids)
+        unexpected = sorted(archived_ids - expected_entries.keys())
+        if missing or unexpected:
             raise ValueError(
-                f"{capture_id}: pixel hash mismatch; changed_pixels="
+                f"baseline archive: capture ID set; missing={missing}, "
+                f"unexpected={unexpected}"
+            )
+        baselines = {}
+        for capture_id in sorted(expected_entries):
+            entry = expected_entries[capture_id]
+            baseline = _read_indexed_data(archive.read(capture_id + ".w3i"), capture_id)
+            dimensions = entry["output_dimensions"]
+            if not isinstance(dimensions, (list, tuple)) or len(dimensions) != 2:
+                raise ValueError(f"{capture_id}: invalid manifest dimensions {dimensions!r}")
+            if [baseline.width, baseline.height] != list(dimensions):
+                raise ValueError(
+                    f"{capture_id}: archived dimension mismatch; "
+                    f"expected={dimensions[0]}x{dimensions[1]}, "
+                    f"actual={baseline.width}x{baseline.height}"
+                )
+            expected_hash = entry["pixel_hash"]
+            archived_hash = "sha256:" + hashlib.sha256(baseline.pixels).hexdigest()
+            if archived_hash != expected_hash:
+                raise ValueError(
+                    f"{capture_id}: archived baseline hash mismatch; "
+                    f"expected={expected_hash}, actual={archived_hash}"
+                )
+            baselines[capture_id] = baseline
+    for capture_id in sorted(expected_entries):
+        left, right = dict(expected_entries[capture_id]), dict(actual_entries[capture_id])
+        expected_hash, actual_hash = left.pop("pixel_hash"), right.pop("pixel_hash")
+        compare_metadata(left, right)
+        candidate = read_indexed(capture_directory / (capture_id + ".w3i"))
+        difference = compare_pixels(baselines[capture_id], candidate)
+        if difference.changed_pixels or expected_hash != actual_hash:
+            raise ValueError(
+                f"{capture_id}: pixel mismatch; changed_pixels="
                 f"{difference.changed_pixels}, bounding_box={difference.bounding_box}, "
                 f"expected={expected_hash}, actual={actual_hash}"
             )

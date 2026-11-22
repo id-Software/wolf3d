@@ -149,11 +149,14 @@ python3 -m unittest discover -s tests -p test_render.py -v
 
 The command compiles the established C render harness, constructs the existing
 synthetic archives, generates all canonical indexed captures in a temporary
-directory, and compares their dimensions, metadata, SHA-256 hashes and pixels
-with `tests/fixtures/visual_baselines.json` and
-`tests/fixtures/visual_baselines.zip`. It exits nonzero on a mismatch. Owned-data
-compatibility cases remain skips when `WOLF3D_DATA` is absent; the synthetic
-baseline itself is required and cannot skip.
+directory, verifies the archive/manifest capture ID set, checks every archived
+capture's dimensions and SHA-256, and then compares candidate dimensions,
+metadata, hashes and exact pixels with `tests/fixtures/visual_baselines.json`
+and `tests/fixtures/visual_baselines.zip`. Candidate hash equality never skips
+archive validation. It exits nonzero on a mismatch, including a missing archive
+entry or corrupted archived pixels. Owned-data compatibility cases remain skips
+when `WOLF3D_DATA` is absent; the synthetic baseline itself is required and
+cannot skip.
 
 To retain palette-correct BMPs and a run manifest for manual inspection:
 
