@@ -1,0 +1,1375 @@
+{
+  "captures": [
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-framebuffer",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "corridor-static-classic-320x200",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        320,
+        200
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:10998797e261011eec62eb35ce1431cc653957510878eb174373eee7e53e7523",
+      "rendering_mode": "classic",
+      "scene_id": "corridor-static",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "static",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-corrected-nearest",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "corridor-static-classic-output-1001x601",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        1001,
+        601
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:24814fa8a0e4865fd1aa67869f5273825a8514d13840502d271d8ed03185d21d",
+      "rendering_mode": "classic",
+      "scene_id": "corridor-static",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "static",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-corrected-nearest",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "corridor-static-classic-output-1280x720",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        1280,
+        720
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:94968ece773a0a11ea87ee4cc1670189573a5d7ee3af5816f803ac24c4e71ccb",
+      "rendering_mode": "classic",
+      "scene_id": "corridor-static",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "static",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-corrected-nearest",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "corridor-static-classic-output-640x480",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        640,
+        480
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:cda93048bae8d19a9a1e44b769eb259b90e8effb65764053ec7c68ac5e9aaad6",
+      "rendering_mode": "classic",
+      "scene_id": "corridor-static",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "static",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "auto",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "corridor-static-enhanced-1001x601-auto",
+      "internal_dimensions": [
+        1001,
+        601
+      ],
+      "output_dimensions": [
+        1001,
+        601
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:2a68a8536faa7cbd0241ca439cce748f25396de73167daec9d3fc24d6f73beaf",
+      "rendering_mode": "enhanced",
+      "scene_id": "corridor-static",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "auto",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "16:9",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "corridor-static-enhanced-1280x720-16x9",
+      "internal_dimensions": [
+        1280,
+        720
+      ],
+      "output_dimensions": [
+        1280,
+        720
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:4078ea314fd5c389b0d8e7cd9ccdece3d5a1a52c7a7bc0863b0e61cf49c98b74",
+      "rendering_mode": "enhanced",
+      "scene_id": "corridor-static",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "static",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "16:10",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "corridor-static-enhanced-1280x800-16x10",
+      "internal_dimensions": [
+        1280,
+        800
+      ],
+      "output_dimensions": [
+        1280,
+        800
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:125a2cf98e67428af403b013fd05f45c88de2095771df2f8f7379dd7ed348bff",
+      "rendering_mode": "enhanced",
+      "scene_id": "corridor-static",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "static",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "21:9",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "corridor-static-enhanced-1680x720-21x9",
+      "internal_dimensions": [
+        1680,
+        720
+      ],
+      "output_dimensions": [
+        1680,
+        720
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:68bb62f285a71bcc9ea8905de332c11759c07f6e64a31df65b88946ea8d7e9c2",
+      "rendering_mode": "enhanced",
+      "scene_id": "corridor-static",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "static",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "32:9",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "corridor-static-enhanced-2560x720-32x9",
+      "internal_dimensions": [
+        2560,
+        720
+      ],
+      "output_dimensions": [
+        2560,
+        720
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:06e7c97b0923f1a48cb0f6a1a4146d7506ad4f8120ab3cd75ab2a7f9086cd972",
+      "rendering_mode": "enhanced",
+      "scene_id": "corridor-static",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "static",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "corridor-static-enhanced-640x480-4x3",
+      "internal_dimensions": [
+        640,
+        480
+      ],
+      "output_dimensions": [
+        640,
+        480
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:537b12696d5a65c37a1d88f6cbc7fc7de364f844cae9589299f951fb8adf34f9",
+      "rendering_mode": "enhanced",
+      "scene_id": "corridor-static",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "static",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-corrected-nearest",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "display-transition-classic-initial-640x480",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        640,
+        480
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:cda93048bae8d19a9a1e44b769eb259b90e8effb65764053ec7c68ac5e9aaad6",
+      "rendering_mode": "classic",
+      "scene_id": "display-transition",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "initial",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-corrected-nearest",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "display-transition-classic-letterbox-1280x720",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        1280,
+        720
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:94968ece773a0a11ea87ee4cc1670189573a5d7ee3af5816f803ac24c4e71ccb",
+      "rendering_mode": "classic",
+      "scene_id": "display-transition",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "letterbox",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-corrected-nearest",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "display-transition-classic-resize-1001x601",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        1001,
+        601
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:24814fa8a0e4865fd1aa67869f5273825a8514d13840502d271d8ed03185d21d",
+      "rendering_mode": "classic",
+      "scene_id": "display-transition",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "resize",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-corrected-nearest",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "display-transition-classic-restored-640x480",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        640,
+        480
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:cda93048bae8d19a9a1e44b769eb259b90e8effb65764053ec7c68ac5e9aaad6",
+      "rendering_mode": "classic",
+      "scene_id": "display-transition",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "restored",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "auto",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "display-transition-enhanced-auto-1001x601",
+      "internal_dimensions": [
+        1001,
+        601
+      ],
+      "output_dimensions": [
+        1001,
+        601
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:2a68a8536faa7cbd0241ca439cce748f25396de73167daec9d3fc24d6f73beaf",
+      "rendering_mode": "enhanced",
+      "scene_id": "display-transition",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "auto",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "display-transition-enhanced-initial-640x480-4x3",
+      "internal_dimensions": [
+        640,
+        480
+      ],
+      "output_dimensions": [
+        640,
+        480
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:537b12696d5a65c37a1d88f6cbc7fc7de364f844cae9589299f951fb8adf34f9",
+      "rendering_mode": "enhanced",
+      "scene_id": "display-transition",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "initial",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "display-transition-enhanced-restored-640x480-4x3",
+      "internal_dimensions": [
+        640,
+        480
+      ],
+      "output_dimensions": [
+        640,
+        480
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:537b12696d5a65c37a1d88f6cbc7fc7de364f844cae9589299f951fb8adf34f9",
+      "rendering_mode": "enhanced",
+      "scene_id": "display-transition",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "restored",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "16:9",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "display-transition-enhanced-wide-1280x720-16x9",
+      "internal_dimensions": [
+        1280,
+        720
+      ],
+      "output_dimensions": [
+        1280,
+        720
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:4078ea314fd5c389b0d8e7cd9ccdece3d5a1a52c7a7bc0863b0e61cf49c98b74",
+      "rendering_mode": "enhanced",
+      "scene_id": "display-transition",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "wide",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-framebuffer",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "door-motion-closed-classic-320x200",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        320,
+        200
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:10998797e261011eec62eb35ce1431cc653957510878eb174373eee7e53e7523",
+      "rendering_mode": "classic",
+      "scene_id": "door-motion",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "closed",
+      "world_state": {
+        "door": {
+          "position": 0,
+          "tile": [
+            9,
+            3
+          ]
+        },
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "16:9",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "door-motion-closed-enhanced-1280x720-16x9",
+      "internal_dimensions": [
+        1280,
+        720
+      ],
+      "output_dimensions": [
+        1280,
+        720
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:4078ea314fd5c389b0d8e7cd9ccdece3d5a1a52c7a7bc0863b0e61cf49c98b74",
+      "rendering_mode": "enhanced",
+      "scene_id": "door-motion",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "closed",
+      "world_state": {
+        "door": {
+          "position": 0,
+          "tile": [
+            9,
+            3
+          ]
+        },
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-framebuffer",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "door-motion-half-open-classic-320x200",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        320,
+        200
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:af5ed70ab293394b5dacb80211f827e32038bc0cb2a885219d21c3026a413bf8",
+      "rendering_mode": "classic",
+      "scene_id": "door-motion",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "half-open",
+      "world_state": {
+        "door": {
+          "position": 32768,
+          "tile": [
+            9,
+            3
+          ]
+        },
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "16:9",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "door-motion-half-open-enhanced-1280x720-16x9",
+      "internal_dimensions": [
+        1280,
+        720
+      ],
+      "output_dimensions": [
+        1280,
+        720
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:e1eaa7ea18aa1dddb4bca6c498a10bee2b8dbd6bc921dc3fc2cdc9a7bc2109fd",
+      "rendering_mode": "enhanced",
+      "scene_id": "door-motion",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "half-open",
+      "world_state": {
+        "door": {
+          "position": 32768,
+          "tile": [
+            9,
+            3
+          ]
+        },
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-framebuffer",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "door-motion-open-classic-320x200",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        320,
+        200
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:d0ab99cf9fb9b8e3bd80bffffd0ab5bc961a1cd9ff27ecfe12b68b0f43ab89ee",
+      "rendering_mode": "classic",
+      "scene_id": "door-motion",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "open",
+      "world_state": {
+        "door": {
+          "position": 65535,
+          "tile": [
+            9,
+            3
+          ]
+        },
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "16:9",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "door-motion-open-enhanced-1280x720-16x9",
+      "internal_dimensions": [
+        1280,
+        720
+      ],
+      "output_dimensions": [
+        1280,
+        720
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:f2231f0d23cbecf920171f3cf4795d52bbd5e63c99806fe9adb129f4fef22c6d",
+      "rendering_mode": "enhanced",
+      "scene_id": "door-motion",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "open",
+      "world_state": {
+        "door": {
+          "position": 65535,
+          "tile": [
+            9,
+            3
+          ]
+        },
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-framebuffer",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "edge-clipping-classic-320x200",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        320,
+        200
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:9abbfe799c603bde51413e33a061fce5c18d2f851ad29687c524ba836533960f",
+      "rendering_mode": "classic",
+      "scene_id": "edge-clipping",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "static",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "16:9",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "edge-clipping-enhanced-1280x720-16x9",
+      "internal_dimensions": [
+        1280,
+        720
+      ],
+      "output_dimensions": [
+        1280,
+        720
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:bc6179685917eb84c53d1e1f904aeb26354fa1fe6b627220e7aec8a6f916c6f6",
+      "rendering_mode": "enhanced",
+      "scene_id": "edge-clipping",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "static",
+      "world_state": {
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-framebuffer",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "pushwall-motion-initial-classic-320x200",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        320,
+        200
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:0a29cc9a9848c0ebb7ae8a22c6dc6b6aa7a25ac4ae5dc961ede96714ba9cdaaf",
+      "rendering_mode": "classic",
+      "scene_id": "pushwall-motion",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "initial",
+      "world_state": {
+        "pushwall": {
+          "position": 0,
+          "state": 1,
+          "tile": [
+            8,
+            3
+          ]
+        },
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "16:9",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "pushwall-motion-initial-enhanced-1280x720-16x9",
+      "internal_dimensions": [
+        1280,
+        720
+      ],
+      "output_dimensions": [
+        1280,
+        720
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:6ad3c7fafd6e4bf69b4ea459950ddade0aa173d0367f259c3e0e2c866c9e79ad",
+      "rendering_mode": "enhanced",
+      "scene_id": "pushwall-motion",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "initial",
+      "world_state": {
+        "pushwall": {
+          "position": 0,
+          "state": 1,
+          "tile": [
+            8,
+            3
+          ]
+        },
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-framebuffer",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "pushwall-motion-moving-classic-320x200",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        320,
+        200
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:f0fe0c122e6d6e770c6d598ae87d9f2f4c58cd67cab7b47c379fdc36235d955d",
+      "rendering_mode": "classic",
+      "scene_id": "pushwall-motion",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "moving",
+      "world_state": {
+        "pushwall": {
+          "position": 32,
+          "state": 64,
+          "tile": [
+            8,
+            3
+          ]
+        },
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "16:9",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "pushwall-motion-moving-enhanced-1280x720-16x9",
+      "internal_dimensions": [
+        1280,
+        720
+      ],
+      "output_dimensions": [
+        1280,
+        720
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:dc3a83e090689f7493f762c32af24000fe63bb65cfe24c4681947b02a67cb70a",
+      "rendering_mode": "enhanced",
+      "scene_id": "pushwall-motion",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "moving",
+      "world_state": {
+        "pushwall": {
+          "position": 32,
+          "state": 64,
+          "tile": [
+            8,
+            3
+          ]
+        },
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "4:3",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "classic-framebuffer",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "pushwall-motion-tile-boundary-classic-320x200",
+      "internal_dimensions": [
+        320,
+        200
+      ],
+      "output_dimensions": [
+        320,
+        200
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:ceb9072350a74d6512ee85ee0f3d068194701dc54b4d0edbe29812afcf2279aa",
+      "rendering_mode": "classic",
+      "scene_id": "pushwall-motion",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "tile-boundary",
+      "world_state": {
+        "pushwall": {
+          "position": 0,
+          "state": 128,
+          "tile": [
+            9,
+            3
+          ]
+        },
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    },
+    {
+      "aspect_ratio": "16:9",
+      "camera": {
+        "angle": 0,
+        "offset": [
+          32768,
+          32768
+        ],
+        "tile": [
+          2,
+          3
+        ]
+      },
+      "capture_method": "WL_RenderFrameAspect",
+      "comparison_policy": "exact-indexed",
+      "fixture_identity": "sha256:ffff04de6096045db92794b0b419c2d11d56d5fa48e36fb755cf1aa1a0a7993b",
+      "id": "pushwall-motion-tile-boundary-enhanced-1280x720-16x9",
+      "internal_dimensions": [
+        1280,
+        720
+      ],
+      "output_dimensions": [
+        1280,
+        720
+      ],
+      "palette_identity": "sha256:9c6d75cf32e883cc936374b718b0d628e9cf449cecaa32c1415f2877aefe1670",
+      "pixel_format": "w3r-indexed-v1",
+      "pixel_hash": "sha256:4780a19e20cf108ac827d5ea70bb5ccbe086bd57471aa6153894b03e4b407e04",
+      "rendering_mode": "enhanced",
+      "scene_id": "pushwall-motion",
+      "sdl_backend": "not-applicable-canonical-indexed",
+      "simulation_tick": 0,
+      "source_revision": "R0.4-baseline-v1",
+      "state": "tile-boundary",
+      "world_state": {
+        "pushwall": {
+          "position": 0,
+          "state": 128,
+          "tile": [
+            9,
+            3
+          ]
+        },
+        "random_seed": 0,
+        "view_size": 15,
+        "weapon": "pistol"
+      }
+    }
+  ],
+  "schema_version": 1
+}

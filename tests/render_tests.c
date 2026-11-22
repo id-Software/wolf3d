@@ -260,6 +260,102 @@ static void Visual(void)
     CHECK(background!=10 && background!=20);
     free(pixels);GameStop();
 }
+extern statetype s_grdstand;
+static void BaselineWrite(const char *directory,const char *name,const uint8_t *pixels,
+                          unsigned width,unsigned height,unsigned stride)
+{
+    char path[4096];CHECK(snprintf(path,sizeof(path),"%s/%s.w3i",directory,name)>0);
+    FILE *file=fopen(path,"wb");CHECK(file);
+    const uint8_t header[16]={'W','3','R','I',1,0,0,0,
+        (uint8_t)width,(uint8_t)(width>>8),(uint8_t)(width>>16),(uint8_t)(width>>24),
+        (uint8_t)height,(uint8_t)(height>>8),(uint8_t)(height>>16),(uint8_t)(height>>24)};
+    CHECK(fwrite(header,1,sizeof(header),file)==sizeof(header));
+    for(unsigned y=0;y<height;++y)
+        CHECK(fwrite(pixels+(size_t)y*stride,1,width,file)==width);
+    CHECK(!fclose(file));
+}
+static void BaselineClassicOutput(const char *directory,const char *name,unsigned width,unsigned height)
+{
+    size_t count=(size_t)width*height;uint8_t *pixels=calloc(count,1);CHECK(pixels);
+    uint64_t lhs=(uint64_t)width*3,rhs=(uint64_t)height*4;
+    unsigned cw=lhs<=rhs?width:(unsigned)((uint64_t)height*4/3);
+    unsigned ch=lhs<=rhs?(unsigned)((uint64_t)width*3/4):height;
+    unsigned ox=(width-cw)/2,oy=(height-ch)/2;
+    for(unsigned y=0;y<ch;++y) for(unsigned x=0;x<cw;++x)
+        pixels[(size_t)(oy+y)*width+ox+x]=framebuffer[(size_t)(y*200/ch)*320+x*320/cw];
+    BaselineWrite(directory,name,pixels,width,height,width);free(pixels);
+}
+static void BaselineEnhanced(const char *directory,const char *name,unsigned width,unsigned height,
+                             unsigned aspect_width,unsigned aspect_height)
+{
+    size_t count=(size_t)width*height;uint8_t *pixels=malloc(count);int32_t *depth=malloc((size_t)width*sizeof(*depth));
+    wl_render_target target;CHECK(pixels && depth && WL_TargetInit(&target,pixels,count,width,height,width));
+    CHECK(WL_RenderFrameAspect(&target,depth,width,true,aspect_width,aspect_height,NULL));
+    BaselineWrite(directory,name,pixels,width,height,width);free(depth);free(pixels);
+}
+static void BaselineScene(void)
+{
+    CHECK(GameStart(0));InitObjects();CHECK(NewViewSize(15));
+    memset(tilemap,0,sizeof(tilemap));memset(areaMap,0,sizeof(areaMap));
+    for(unsigned i=0;i<64;++i) tilemap[0][i]=tilemap[63][i]=tilemap[i][0]=tilemap[i][63]=1;
+    for(unsigned x=1;x<=12;++x) tilemap[x][1]=tilemap[x][5]=1;
+    for(unsigned y=1;y<=5;++y) tilemap[12][y]=1;
+    player.x=2*TILEGLOBAL+32768;player.y=3*TILEGLOBAL+32768;player.tilex=2;player.tiley=3;player.angle=0;
+    gamestate.weapon=gamestate.chosenweapon=gamestate.bestweapon=wp_pistol;gamestate.weaponframe=0;
+    statcount=2;statobjlist[0]=(statobj_t){4,2,SPR_STAT_0,dressing,false};
+    statobjlist[1]=(statobj_t){7,4,SPR_STAT_1,dressing,false};
+    objtype *actor=SpawnActor(6,3,&s_grdstand);CHECK(actor);actor->angle=180;actor->dir=west;actor->active=true;
+    doornum=1;tilemap[9][3]=128;doorobjlist[0]=(doorobj_t){9,3,0,true,dr_closed,0,0};
+    ResetPushwalls();
+}
+static void BaselinePair(const char *directory,const char *stem)
+{
+    char name[128];CHECK(GameDrawPaused());
+    CHECK(snprintf(name,sizeof(name),"%s-classic-320x200",stem)>0);BaselineWrite(directory,name,framebuffer,320,200,320);
+    CHECK(snprintf(name,sizeof(name),"%s-enhanced-1280x720-16x9",stem)>0);BaselineEnhanced(directory,name,1280,720,16,9);
+}
+static void Baselines(const char *directory)
+{
+    char path[4096];CHECK(snprintf(path,sizeof(path),"%s/palette.rgb6",directory)>0);
+    FILE *file=fopen(path,"wb");CHECK(file && fwrite(palette,1,768,file)==768 && !fclose(file));
+
+    BaselineScene();BaselinePair(directory,"corridor-static");
+    BaselineClassicOutput(directory,"corridor-static-classic-output-640x480",640,480);
+    BaselineClassicOutput(directory,"corridor-static-classic-output-1280x720",1280,720);
+    BaselineClassicOutput(directory,"corridor-static-classic-output-1001x601",1001,601);
+    BaselineEnhanced(directory,"corridor-static-enhanced-640x480-4x3",640,480,4,3);
+    BaselineEnhanced(directory,"corridor-static-enhanced-1280x800-16x10",1280,800,16,10);
+    BaselineEnhanced(directory,"corridor-static-enhanced-1680x720-21x9",1680,720,21,9);
+    BaselineEnhanced(directory,"corridor-static-enhanced-2560x720-32x9",2560,720,32,9);
+    BaselineEnhanced(directory,"corridor-static-enhanced-1001x601-auto",1001,601,1001,601);
+    GameStop();
+
+    static const uint16_t door_positions[]={0,32768,65535};
+    static const char *door_names[]={"closed","half-open","open"};
+    for(unsigned i=0;i<3;++i) { BaselineScene();doorobjlist[0].position=door_positions[i];doorobjlist[0].action=i==2?dr_open:dr_opening;
+        char stem[64];CHECK(snprintf(stem,sizeof(stem),"door-motion-%s",door_names[i])>0);BaselinePair(directory,stem);GameStop(); }
+
+    static const unsigned wall_states[]={0,32,0};
+    static const char *wall_names[]={"initial","moving","tile-boundary"};
+    for(unsigned i=0;i<3;++i) { BaselineScene();doornum=0;tilemap[9][3]=0;
+        pwallstate=i==2?128:i==1?64:1;pwallpos=wall_states[i];pwallx=i==2?9:8;pwally=3;pwalldir=east;
+        tilemap[8][3]=i==2?0:0xc1;tilemap[9][3]=i==2?0xc1:1;tilemap[10][3]=i==2?1:0;
+        char stem[64];CHECK(snprintf(stem,sizeof(stem),"pushwall-motion-%s",wall_names[i])>0);BaselinePair(directory,stem);GameStop(); }
+
+    BaselineScene();statobjlist[0].tilex=4;statobjlist[0].tiley=1;statobjlist[1].tilex=4;statobjlist[1].tiley=5;
+    BaselinePair(directory,"edge-clipping");GameStop();
+
+    BaselineScene();CHECK(GameDrawPaused());
+    BaselineClassicOutput(directory,"display-transition-classic-initial-640x480",640,480);
+    BaselineClassicOutput(directory,"display-transition-classic-letterbox-1280x720",1280,720);
+    BaselineClassicOutput(directory,"display-transition-classic-resize-1001x601",1001,601);
+    BaselineClassicOutput(directory,"display-transition-classic-restored-640x480",640,480);
+    BaselineEnhanced(directory,"display-transition-enhanced-initial-640x480-4x3",640,480,4,3);
+    BaselineEnhanced(directory,"display-transition-enhanced-wide-1280x720-16x9",1280,720,16,9);
+    BaselineEnhanced(directory,"display-transition-enhanced-auto-1001x601",1001,601,1001,601);
+    BaselineEnhanced(directory,"display-transition-enhanced-restored-640x480-4x3",640,480,4,3);
+    GameStop();puts("Synthetic Classic/Enhanced visual baselines captured.");
+}
 int main(int argc,char **argv)
 {
     CHECK(argc==4);
@@ -338,7 +434,7 @@ int main(int argc,char **argv)
     /* Switching display preference cannot consume a simulation tic or RNG. */
     for(unsigned n=0;n<30;++n) { d.high_resolution=!d.high_resolution;CHECK(VL_DisplaySet(&d));Pump();CHECK(US_RndIndex()==rng && gamestate.TimeCount==clock); }
     Wide();AutoScaling(argv[2]);DeathContinuity();
-    if(!strcmp(argv[3],"synthetic")) Visual();
+    if(!strcmp(argv[3],"synthetic")) { Visual();const char *baseline=getenv("WOLF3D_BASELINE_DIR");if(baseline) Baselines(baseline); }
     else { AudioStress();OwnedLevels(); }
     GameStop();Audio_Shutdown();Display_Connect(NULL,NULL);VL_Shutdown();CA_Shutdown();MM_Shutdown();CHECK(!MM_TotalBytes());
     puts("Native render targets, all sizes/views, HUD, isolation, persistence, switching and failure recovery passed.");return 0;

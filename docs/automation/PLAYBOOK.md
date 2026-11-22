@@ -20,10 +20,10 @@ A second occurrence triggers an automation candidate. Tasks with high risk or li
 | --- | --- | --- | --- | --- |
 | AUTO-01 | Build/smoke environment checks | `tools/doctor.sh` | R0.1/R0.6 | R0.1 PROCEDURE DOCUMENTED; SCRIPT NOT IMPLEMENTED |
 | AUTO-02 | Fast headless/unit regressions | `tools/test.sh` | R0.3/R0.6 | EXISTING UNITTEST SUITE; WRAPPER NOT IMPLEMENTED |
-| AUTO-03 | SDL graphics/display regression | `tools/test.sh --graphics` | R0.4/R0.6 | EXISTING UNITTEST COVERAGE; WRAPPER/BASELINE NOT IMPLEMENTED |
+| AUTO-03 | SDL graphics/display regression | `tools/test.sh --graphics` | R0.4/R0.6 | EXISTING UNITTEST COVERAGE + R0.4 BASELINE; WRAPPER DEFERRED TO R0.6 |
 | AUTO-04 | ASan/UBSan test matrix | `SANITIZE=1 tools/test.sh` | R0.5/R0.6 | NOT IMPLEMENTED |
 | AUTO-05 | Revision-based gating and progress/logs | `python3 tools/validation/run.py R0.4` | R0.6 | NOT IMPLEMENTED |
-| AUTO-06 | Deterministic capture comparison | `tools/capture_baseline.sh` (interface subject to design) | R0.4 | NOT IMPLEMENTED |
+| AUTO-06 | Deterministic capture comparison | `python3 -m unittest discover -s tests -p test_render.py -v` | R0.4 | IMPLEMENTED IN EXISTING RENDER UNITTEST DRIVER |
 | AUTO-07 | Content provenance and banned-asset scanning | `tools/audit_content.py` (interface subject to design) | R1 | NOT IMPLEMENTED |
 | AUTO-08 | Map/content fixture validation | `tools/validate_content.py` (interface subject to design) | R2 | NOT IMPLEMENTED |
 | AUTO-09 | Workshop round-trip integration | revision-selected test fixture | R6.6 | NOT IMPLEMENTED |
@@ -137,6 +137,44 @@ Store repeatable revision evidence under ignored
 `build/validation/<revision>/`. Record each command and exit separately; a
 successful compile is not a test result. Until R0.6, callers must supply their
 own bounded timeout and preserve complete stdout/stderr.
+
+## Verified R0.4 graphics baseline
+
+The synthetic Classic/Enhanced baseline is part of the existing render
+unittest driver; no proprietary game data or external image package is needed:
+
+```sh
+python3 -m unittest discover -s tests -p test_render.py -v
+```
+
+The command compiles the established C render harness, constructs the existing
+synthetic archives, generates all canonical indexed captures in a temporary
+directory, and compares their dimensions, metadata, SHA-256 hashes and pixels
+with `tests/fixtures/visual_baselines.json` and
+`tests/fixtures/visual_baselines.zip`. It exits nonzero on a mismatch. Owned-data
+compatibility cases remain skips when `WOLF3D_DATA` is absent; the synthetic
+baseline itself is required and cannot skip.
+
+To retain palette-correct BMPs and a run manifest for manual inspection:
+
+```sh
+WOLF3D_BASELINE_DIR="$PWD/build/validation/R0.4/captures" \
+  python3 -m unittest discover -s tests -p test_render.py -v
+```
+
+This writes generated `.w3i`, `.bmp` and `manifest.json` files below the ignored
+build directory. Review Classic corrected 4:3 at 640x480, letterboxed 1280x720
+and non-integer 1001x601; then review Enhanced 4:3, 16:9, 16:10, 21:9, 32:9
+and Auto. Check corridor depth and sprites, the three door and pushwall states,
+viewport-edge clipping, HUD/weapon placement, black bars and restored display
+images. Record the reviewer, platform/backend, date and each result separately;
+capture generation is not human approval.
+
+Baseline replacement is a review operation, not a normal validation step.
+After an intentional renderer change, set `WOLF3D_UPDATE_BASELINES=1` only in a
+reviewed working tree, inspect the resulting manifest/archive diff and retained
+BMPs, and run the ordinary command again without that variable. Never update a
+baseline merely to make an unexplained failure pass.
 
 ## Required script contract
 
