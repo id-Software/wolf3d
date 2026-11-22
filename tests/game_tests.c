@@ -139,6 +139,41 @@ static void TestWorld(bool synthetic,const char *dump)
     }
     ShutdownGameLevel();
 }
+static void TestMapBounds(void)
+{
+    CHECK(GameStart(0));
+    /* Empty the perimeter so only coordinate bounds can reject these probes. */
+    for(int i=0;i<64;++i) {
+        const int edge_x[4]={0,63,i,i},edge_y[4]={i,i,0,63};
+        for(unsigned edge=0;edge<4;++edge) {
+            tilemap[edge_x[edge]][edge_y[edge]]=0;
+            staticblock[edge_x[edge]][edge_y[edge]]=false;
+            actorat[edge_x[edge]][edge_y[edge]]=NULL;
+        }
+    }
+    objtype probe=player;
+    const int32_t inside_x=3*TILEGLOBAL+32768,inside_y=5*TILEGLOBAL+32768;
+    probe.x=inside_x;probe.y=inside_y;
+    probe.x=MINDIST-1;CHECK(!TryMove(&probe));
+    probe.x=MINDIST;CHECK(TryMove(&probe));
+    probe.x=64*TILEGLOBAL-MINDIST;CHECK(!TryMove(&probe));
+    probe.x=64*TILEGLOBAL-MINDIST-1;CHECK(TryMove(&probe));
+    probe.x=inside_x;
+    probe.y=MINDIST-1;CHECK(!TryMove(&probe));
+    probe.y=MINDIST;CHECK(TryMove(&probe));
+    probe.y=64*TILEGLOBAL-MINDIST;CHECK(!TryMove(&probe));
+    probe.y=64*TILEGLOBAL-MINDIST-1;CHECK(TryMove(&probe));
+
+    /* An off-map move is refused outright, not slid along an open axis. */
+    player.x=63*TILEGLOBAL+32768;player.y=inside_y;
+    int32_t x=player.x,y=player.y;
+    ClipMove(&player,TILEGLOBAL/2,TILEGLOBAL/2);
+    CHECK(player.x==x && player.y==y);
+    player.x=32768;player.y=inside_y;x=player.x;y=player.y;
+    ClipMove(&player,-TILEGLOBAL/2-1,-TILEGLOBAL/2);
+    CHECK(player.x==x && player.y==y);
+    GameStop();
+}
 static void TestDoors(void)
 {
     CHECK(SetupGameLevel());
@@ -240,7 +275,7 @@ static void TestMenuGame(void)
 int main(int argc,char **argv)
 {
     CHECK(argc>=2);TestExpand();TestFixed();TestScale();MM_Startup();CHECK(!GameProbe());CHECK(CA_Startup(argv[1]));
-    CHECK(VL_SetPalette(gamepal,768));TestInputMenu();TestWorld(argc==2,argc>3 ? argv[3] : NULL);if(argc==2) TestDoors();TestSimulation();if(argc>2) TestOwnedWalk();TestMenuGame();
+    CHECK(VL_SetPalette(gamepal,768));TestInputMenu();TestWorld(argc==2,argc>3 ? argv[3] : NULL);TestMapBounds();if(argc==2) TestDoors();TestSimulation();if(argc>2) TestOwnedWalk();TestMenuGame();
     GameStop();CA_Shutdown();MM_Shutdown();CHECK(!MM_TotalBytes());
     puts("Original map/VSWAP, fixed-point ray/scaler, movement and menu/game tests passed.");return 0;
 }
