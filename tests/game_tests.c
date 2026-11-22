@@ -142,15 +142,10 @@ static void TestWorld(bool synthetic,const char *dump)
 static void TestMapBounds(void)
 {
     CHECK(GameStart(0));
-    /* Empty the perimeter so only coordinate bounds can reject these probes. */
-    for(int i=0;i<64;++i) {
-        const int edge_x[4]={0,63,i,i},edge_y[4]={i,i,0,63};
-        for(unsigned edge=0;edge<4;++edge) {
-            tilemap[edge_x[edge]][edge_y[edge]]=0;
-            staticblock[edge_x[edge]][edge_y[edge]]=false;
-            actorat[edge_x[edge]][edge_y[edge]]=NULL;
-        }
-    }
+    /* Reset actor/collision grids, then use a fully open traversable map so the
+       only possible obstruction is the coordinate bound under test. */
+    InitObjects();
+    memset(tilemap,0,sizeof(tilemap));
     objtype probe=player;
     const int32_t inside_x=3*TILEGLOBAL+32768,inside_y=5*TILEGLOBAL+32768;
     probe.x=inside_x;probe.y=inside_y;
@@ -172,7 +167,7 @@ static void TestMapBounds(void)
     player.x=32768;player.y=inside_y;x=player.x;y=player.y;
     ClipMove(&player,-TILEGLOBAL/2-1,-TILEGLOBAL/2);
     CHECK(player.x==x && player.y==y);
-    GameStop();
+    GameStop(); /* ShutdownGameLevel -> InitObjects resets actorat/staticblock. */
 }
 static void TestDoors(void)
 {
