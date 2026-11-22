@@ -17,6 +17,7 @@ jobs:
     timeout-minutes: 30
     env:
       SDL_SDK: ${{ github.workspace }}/.cache/SDL
+      WOLF3D_BINARY: ${{ github.workspace }}/build/cart-sdl/linux/wolf3d-revive
       SDL_VIDEODRIVER: dummy
       SDL_RENDER_DRIVER: software
       SDL_AUDIODRIVER: dummy
@@ -56,6 +57,12 @@ jobs:
           python3 --version
           gcc --version | head -1
           test -f "$SDL_SDK/build/libSDL3.a"
+
+      - name: Build application (clean checkout, no proprietary assets)
+        run: |
+          set -euxo pipefail
+          ./tools/ci_build_app.sh "$WOLF3D_BINARY"
+          test -x "$WOLF3D_BINARY" || test -f "$WOLF3D_BINARY"
 
       - name: Run R0.6 mandatory synthetic validation
         run: |
