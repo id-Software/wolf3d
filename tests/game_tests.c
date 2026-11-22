@@ -323,6 +323,100 @@ static void TestRestart(void)
     CHECK(memcmp(&first,&second,sizeof(first))==0);
     GameStop();
 }
+/* Explicit scalar projection of authoritative state; no pointers or padding. */
+typedef struct {
+    int32_t x,y;
+    int tilex,tiley,angle;
+    uint32_t time_count;
+    int health,ammo,lives,keys,score;
+    int episode,mapon,difficulty,weapon;
+    int playstate;
+    unsigned objcount,statcount,doornum;
+    unsigned door_x,door_y,door_lock,door_position,door_ticcount;
+    int door_action;
+    bool door_vertical,door_reserved;
+    unsigned pwallstate,pwallpos;
+    w3r_byte door_tile;
+    bool player_next_null,player_state_null;
+} replay_state;
+static void CaptureReplayState(replay_state *s)
+{
+    const doorobj_t *d=&doorobjlist[0];
+    memset(s,0,sizeof(*s));
+    s->x=player.x;s->y=player.y;
+    s->tilex=player.tilex;s->tiley=player.tiley;s->angle=player.angle;
+    s->time_count=gamestate.TimeCount;
+    s->health=gamestate.health;s->ammo=gamestate.ammo;s->lives=gamestate.lives;
+    s->keys=gamestate.keys;s->score=gamestate.score;
+    s->episode=gamestate.episode;s->mapon=gamestate.mapon;
+    s->difficulty=gamestate.difficulty;s->weapon=gamestate.weapon;
+    s->playstate=(int)playstate;
+    s->objcount=objcount;s->statcount=statcount;s->doornum=doornum;
+    CHECK(doornum==1);
+    s->door_x=d->x;s->door_y=d->y;s->door_lock=d->lock;
+    s->door_vertical=d->vertical;s->door_action=(int)d->action;
+    s->door_position=d->position;s->door_ticcount=d->ticcount;
+    s->door_reserved=actorat[d->x][d->y]!=NULL;
+    s->door_tile=tilemap[d->x][d->y];
+    s->pwallstate=pwallstate;s->pwallpos=pwallpos;
+    s->player_next_null=player.next==NULL;s->player_state_null=player.state==NULL;
+}
+/* Same logical input script for every session, one 70 Hz tic per GameStep. */
+static void ReplayInputs(void)
+{
+    uint64_t t=0;
+    IN_KeyEvent(sc_UpArrow,true); /* walk east up to the closed door */
+    for(unsigned i=0;i<40;++i) CHECK(GameStep(++t));
+    IN_KeyEvent(sc_UpArrow,false);
+    CHECK(GameStep(++t));
+    Key(sc_Space);CHECK(GameStep(++t)); /* use the door */
+    IN_KeyEvent(sc_UpArrow,true);
+    for(unsigned i=0;i<10;++i) CHECK(GameStep(++t));
+    IN_KeyEvent(sc_UpArrow,false);
+    IN_KeyEvent(sc_RightArrow,true);
+    for(unsigned i=0;i<4;++i) CHECK(GameStep(++t));
+    IN_KeyEvent(sc_RightArrow,false);
+    IN_KeyEvent(sc_UpArrow,true);
+    for(unsigned i=0;i<4;++i) CHECK(GameStep(++t));
+    IN_KeyEvent(sc_UpArrow,false);
+    CHECK(GameStep(++t));
+    CHECK(t==61);
+}
+static replay_state RunReplaySession(void)
+{
+    replay_state s;
+    IN_ClearKeysDown(); /* no pressed/held keys leak into a fresh session */
+    CHECK(GameStartMap(0,0,2,42)); /* fixed synthetic map, difficulty and seed */
+    CHECK(player.tilex==2 && player.tiley==2 && player.angle==0);
+    CHECK(gamestate.TimeCount==0 && gamestate.health==100 && gamestate.ammo==8);
+    ReplayInputs();
+    CaptureReplayState(&s);
+    CHECK(s.time_count==61 && s.playstate==ex_playing);
+    CHECK(s.x!=2*TILEGLOBAL+32768); /* movement really changed authoritative state */
+    CHECK(s.door_action==dr_opening && s.door_position>0 && !s.door_reserved);
+    GameStop();
+    return s;
+}
+static void TestDeterministicReplay(void)
+{
+    replay_state first=RunReplaySession();
+    replay_state second=RunReplaySession();
+    CHECK(first.x==second.x && first.y==second.y);
+    CHECK(first.tilex==second.tilex && first.tiley==second.tiley && first.angle==second.angle);
+    CHECK(first.time_count==second.time_count);
+    CHECK(first.health==second.health && first.ammo==second.ammo && first.lives==second.lives);
+    CHECK(first.keys==second.keys && first.score==second.score);
+    CHECK(first.episode==second.episode && first.mapon==second.mapon);
+    CHECK(first.difficulty==second.difficulty && first.weapon==second.weapon);
+    CHECK(first.playstate==second.playstate);
+    CHECK(first.objcount==second.objcount && first.statcount==second.statcount && first.doornum==second.doornum);
+    CHECK(first.door_x==second.door_x && first.door_y==second.door_y && first.door_lock==second.door_lock);
+    CHECK(first.door_vertical==second.door_vertical && first.door_action==second.door_action);
+    CHECK(first.door_position==second.door_position && first.door_ticcount==second.door_ticcount);
+    CHECK(first.door_reserved==second.door_reserved && first.door_tile==second.door_tile);
+    CHECK(first.pwallstate==second.pwallstate && first.pwallpos==second.pwallpos);
+    CHECK(first.player_next_null==second.player_next_null && first.player_state_null==second.player_state_null);
+}
 static void TestOwnedWalk(void)
 {
     CHECK(GameStart(0));int start=player.tilex,door=0;
@@ -351,7 +445,7 @@ static void TestMenuGame(void)
 int main(int argc,char **argv)
 {
     CHECK(argc>=2);TestExpand();TestFixed();TestScale();MM_Startup();CHECK(!GameProbe());CHECK(CA_Startup(argv[1]));
-    CHECK(VL_SetPalette(gamepal,768));TestInputMenu();TestWorld(argc==2,argc>3 ? argv[3] : NULL);TestMapBounds();if(argc==2) TestDoors();TestSimulation();if(argc==2) TestRestart();if(argc>2) TestOwnedWalk();TestMenuGame();
+    CHECK(VL_SetPalette(gamepal,768));TestInputMenu();TestWorld(argc==2,argc>3 ? argv[3] : NULL);TestMapBounds();if(argc==2) TestDoors();TestSimulation();if(argc==2) TestRestart();if(argc==2) TestDeterministicReplay();if(argc>2) TestOwnedWalk();TestMenuGame();
     GameStop();CA_Shutdown();MM_Shutdown();CHECK(!MM_TotalBytes());
     puts("Original map/VSWAP, fixed-point ray/scaler, movement and menu/game tests passed.");return 0;
 }
