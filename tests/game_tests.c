@@ -457,6 +457,35 @@ static void TestPresentationRateDeterminism(void)
     CHECK(every_tick==61 && every_fourth==15); /* genuinely different schedules */
     CheckReplayStatesEqual(&a,&b);
 }
+/* Characterisation of Classic rendering side effects: ThreeDRefresh (not the
+   read-only WL_PresentSample path) marks spotvis, actor visibility and picks
+   up bonuses from DrawScaleds. Everything here is headless and deterministic. */
+static void TestClassicRenderSideEffects(void)
+{
+    CHECK(GameStart(0));
+    /* Stand at the west edge of tile 3: its floor is ray-visible and the
+       bonus there is inside the original pickup projection distance. */
+    player.x=3*TILEGLOBAL;player.y=2*TILEGLOBAL+32768;
+    player.tilex=3;player.tiley=2;player.angle=0;
+    memset(spotvis,0,sizeof(spotvis)); /* controlled pre-render baseline */
+    objtype *visible=SpawnActor(4,2,&s_grdstand);
+    objtype *hidden=SpawnActor(10,10,&s_grdstand);
+    CHECK(visible && hidden);
+    visible->flags=0;hidden->flags=FL_VISABLE; /* render must flip both */
+    PlaceItemType(bo_clip,3,2);
+    CHECK(statcount==1 && statobjlist[0].shapenum!=-1 && gamestate.ammo==8);
+    CHECK(!spotvis[3][2] && !spotvis[4][2] && !spotvis[10][10]);
+    CHECK(!(visible->flags&FL_VISABLE) && (hidden->flags&FL_VISABLE));
+
+    CHECK(ThreeDRefresh()); /* the exact Classic rendering function */
+
+    CHECK(spotvis[3][2] && spotvis[4][2]); /* rays mark traversed floor cells */
+    CHECK(!spotvis[10][10]); /* cells behind the closed door stay invisible */
+    CHECK(visible->flags&FL_VISABLE && visible->active); /* visible actor marked */
+    CHECK(!(hidden->flags&FL_VISABLE)); /* hidden actor's stale flag cleared */
+    CHECK(gamestate.ammo==16 && statobjlist[0].shapenum==-1); /* GetBonus via render */
+    GameStop();
+}
 static void TestOwnedWalk(void)
 {
     CHECK(GameStart(0));int start=player.tilex,door=0;
@@ -485,7 +514,7 @@ static void TestMenuGame(void)
 int main(int argc,char **argv)
 {
     CHECK(argc>=2);TestExpand();TestFixed();TestScale();MM_Startup();CHECK(!GameProbe());CHECK(CA_Startup(argv[1]));
-    CHECK(VL_SetPalette(gamepal,768));TestInputMenu();TestWorld(argc==2,argc>3 ? argv[3] : NULL);TestMapBounds();if(argc==2) TestDoors();TestSimulation();if(argc==2) TestRestart();if(argc==2) TestDeterministicReplay();if(argc==2) TestPresentationRateDeterminism();if(argc>2) TestOwnedWalk();TestMenuGame();
+    CHECK(VL_SetPalette(gamepal,768));TestInputMenu();TestWorld(argc==2,argc>3 ? argv[3] : NULL);TestMapBounds();if(argc==2) TestDoors();TestSimulation();if(argc==2) TestRestart();if(argc==2) TestDeterministicReplay();if(argc==2) TestPresentationRateDeterminism();if(argc==2) TestClassicRenderSideEffects();if(argc>2) TestOwnedWalk();TestMenuGame();
     GameStop();CA_Shutdown();MM_Shutdown();CHECK(!MM_TotalBytes());
     puts("Original map/VSWAP, fixed-point ray/scaler, movement and menu/game tests passed.");return 0;
 }
