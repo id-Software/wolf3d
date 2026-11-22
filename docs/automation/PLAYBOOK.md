@@ -18,9 +18,9 @@ A second occurrence triggers an automation candidate. Tasks with high risk or li
 
 | ID | Repeated work | Proposed canonical interface | Planned milestone | Status |
 | --- | --- | --- | --- | --- |
-| AUTO-01 | Build/smoke environment checks | `tools/doctor.sh` | R0.1/R0.6 | NOT IMPLEMENTED |
-| AUTO-02 | Fast headless/unit regressions | `tools/test.sh` | R0.3/R0.6 | NOT IMPLEMENTED |
-| AUTO-03 | SDL graphics/display regression | `tools/test.sh --graphics` | R0.4/R0.6 | NOT IMPLEMENTED |
+| AUTO-01 | Build/smoke environment checks | `tools/doctor.sh` | R0.1/R0.6 | R0.1 PROCEDURE DOCUMENTED; SCRIPT NOT IMPLEMENTED |
+| AUTO-02 | Fast headless/unit regressions | `tools/test.sh` | R0.3/R0.6 | EXISTING UNITTEST SUITE; WRAPPER NOT IMPLEMENTED |
+| AUTO-03 | SDL graphics/display regression | `tools/test.sh --graphics` | R0.4/R0.6 | EXISTING UNITTEST COVERAGE; WRAPPER/BASELINE NOT IMPLEMENTED |
 | AUTO-04 | ASan/UBSan test matrix | `SANITIZE=1 tools/test.sh` | R0.5/R0.6 | NOT IMPLEMENTED |
 | AUTO-05 | Revision-based gating and progress/logs | `python3 tools/validation/run.py R0.4` | R0.6 | NOT IMPLEMENTED |
 | AUTO-06 | Deterministic capture comparison | `tools/capture_baseline.sh` (interface subject to design) | R0.4 | NOT IMPLEMENTED |
@@ -28,8 +28,80 @@ A second occurrence triggers an automation candidate. Tasks with high risk or li
 | AUTO-08 | Map/content fixture validation | `tools/validate_content.py` (interface subject to design) | R2 | NOT IMPLEMENTED |
 | AUTO-09 | Workshop round-trip integration | revision-selected test fixture | R6.6 | NOT IMPLEMENTED |
 | AUTO-10 | PR evidence/checklist creation | CI/template based on real test metadata | R0.6 | NOT IMPLEMENTED |
+| AUTO-11 | Texture/resource dimension inventory | extend future `tools/audit_content.py` with bounded metadata-only inspection | R1/R2 | R0.1 ONE-OFF INVENTORY ONLY; NOT IMPLEMENTED |
 
 The table is a **backlog**; no script is claimed to exist. Replace speculative names with tested stable commands when each revision delivers.
+
+## Verified R0.1 procedures
+
+These commands were inspected and executed on 22 November 2026. Full results,
+limitations and tool versions are in [`docs/milestones/R0/R0.1.md`](../milestones/R0/R0.1.md).
+They are the current command surface, not the proposed R0.6 wrappers.
+
+Prerequisites:
+
+- CART 0.2.0 available as `build/tools/cart` (ignored) or by an explicit path.
+- a built SDL3 tree at `../cart/vendor/SDL` for profile `cart-sdl`.
+- GCC and Python 3; owned-data checks additionally require a legal external
+  WL6 directory supplied through `WOLF3D_DATA` or `--data`.
+- no dependency installer or game-data downloader is invoked by these commands.
+
+Configured optimized build:
+
+```sh
+./build/tools/cart build --profile cart-sdl --verbose
+```
+
+CART's desktop `build` command has no named debug/release mode. The profile
+build currently receives CART's `-O0 -g` followed by project `-O2`; GCC applies
+the final optimization option. A strict debug compile of the same source set is:
+
+```sh
+gcc -std=c11 -O0 -g3 \
+  -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror \
+  -Isrc -I../cart/vendor/SDL/include \
+  src/main.c src/engine/*.c src/platform/*.c \
+  ../cart/vendor/SDL/build/libSDL3.a -pthread -lm \
+  -o build/wolf3d-revive-debug
+```
+
+`cart doctor` does not accept profiles. In the current layout its base check
+correctly reports missing ignored `vendor/SDL`; verify the sibling profile
+prerequisites explicitly until AUTO-01 is implemented. For a clean-checkout
+gate, invoke a known CART executable by absolute path from a detached clean
+worktree; do not run `cart clean` in the primary checkout because `build/` also
+contains the ignored CART executable.
+
+Finite validation and smoke commands:
+
+```sh
+build/cart-sdl/linux/wolf3d-revive --data /absolute/path/to/WL6 --check-assets
+build/cart-sdl/linux/wolf3d-revive --data /absolute/path/to/WL6 --check-ui
+build/cart-sdl/linux/wolf3d-revive --data /absolute/path/to/WL6 --check-level
+
+SDL_VIDEODRIVER=dummy SDL_RENDER_DRIVER=software SDL_AUDIODRIVER=dummy \
+  XDG_DATA_HOME="$PWD/build/validation/smoke-user" \
+  build/cart-sdl/linux/wolf3d-revive \
+  --data /absolute/path/to/WL6 --level --no-audio --frames 3
+```
+
+Existing full regression:
+
+```sh
+python3 -m unittest discover -s tests -v
+WOLF3D_DATA=/absolute/path/to/WL6 python3 -m unittest discover -s tests -v
+```
+
+The first form is redistributable/synthetic coverage. The second enables the
+private compatibility checks and must never stage the input data or generated
+captures. In R0.1 the owned-data form ran 153 tests with no skips and exit 0.
+The suite already exercises both Classic and Enhanced SDL paths, but it does
+not replace the planned R0.4 capture/human-review gate or R0.5 sanitizer gate.
+
+Store repeatable revision evidence under ignored
+`build/validation/<revision>/`. Record each command and exit separately; a
+successful compile is not a test result. Until R0.6, callers must supply their
+own bounded timeout and preserve complete stdout/stderr.
 
 ## Required script contract
 
