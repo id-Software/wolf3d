@@ -224,6 +224,10 @@ def select_jobs(jobs: list[Job], milestone: str, categories: set[str] | None = N
 
 
 def _pgid_alive(pgid: int) -> bool:
+    """Return whether a process group has a non-zombie member."""
+    members = _process_group_members(pgid)
+    if members is not None:
+        return bool(members)
     try:
         os.killpg(pgid, 0)
         return True
@@ -235,68 +239,123 @@ def _pgid_alive(pgid: int) -> bool:
         return False
 
 
-def kill_process_group(proc: subprocess.Popen, pgid: int | None = None) -> None:
-    """Best-effort bounded cleanup of a job process group.
+def _process_info(pid: int) -> tuple[str, int, int, int] | None:
+    """Return Linux process state, pgrp, session and start ticks."""
+    try:
+        stat = (Path("/proc") / str(pid) / "stat").read_text(encoding="utf-8")
+        fields = stat[stat.rfind(")") + 2:].split()
+        return fields[0], int(fields[2]), int(fields[3]), int(fields[19])
+    except (FileNotFoundError, ProcessLookupError, PermissionError, ValueError, IndexError):
+        return None
 
-    The direct child is always reaped. Group signals are only sent to the
-    captured pgid (proc.pid at start_new_session launch) and guarded by liveness
-    checks to avoid targeting reused process-group IDs.
+
+_IDENTITY_UNSET = object()
+
+
+def _process_group_members(pgid: int, leader_start=_IDENTITY_UNSET) -> list[tuple[int, int]] | None:
+    """List non-zombie members as (pid,start_ticks), or None without /proc.
+
+    A live process at the captured leader PID with a different start time means
+    the PID/process-group ID was reused; cleanup must not signal that group.
+    """
+    procfs = Path("/proc")
+    if not procfs.is_dir():
+        return None
+    leader = _process_info(pgid)
+    if leader_start is None and leader is not None:
+        # The observed leader cannot be tied to this launch. Refuse to inspect
+        # or signal a potentially reused process-group identity.
+        return []
+    if isinstance(leader_start, int) and leader is not None and leader[3] != leader_start:
+        return []
+    members: list[tuple[int, int]] = []
+    for entry in procfs.iterdir():
+        if not entry.name.isdigit():
+            continue
+        pid = int(entry.name)
+        info = _process_info(pid)
+        if info is None:
+            continue
+        state, pgrp, session, start = info
+        if pgrp == pgid and session == pgid and state != "Z":
+            members.append((pid, start))
+    return members
+
+
+def _group_alive(pgid: int, leader_start: int | None) -> bool:
+    members = _process_group_members(pgid, leader_start)
+    return _pgid_alive(pgid) if members is None else bool(members)
+
+
+def _signal_group(pgid: int, leader_start: int | None, sig: int) -> None:
+    members = _process_group_members(pgid, leader_start)
+    if members is None:
+        if _pgid_alive(pgid):
+            try:
+                os.killpg(pgid, sig)
+            except (ProcessLookupError, PermissionError):
+                pass
+        return
+    # Re-check every captured identity immediately before signalling it. This
+    # avoids signalling a process that reused a descendant PID.
+    for pid, start in members:
+        info = _process_info(pid)
+        if info is None or info[3] != start or info[0] == "Z":
+            continue
+        try:
+            os.kill(pid, sig)
+        except (ProcessLookupError, PermissionError):
+            pass
+
+
+def _wait_group_gone(pgid: int, leader_start: int | None, timeout: float) -> bool:
+    deadline = time.monotonic() + timeout
+    while _group_alive(pgid, leader_start) and time.monotonic() < deadline:
+        time.sleep(0.02)
+    return not _group_alive(pgid, leader_start)
+
+
+def _post_exit_group_members(pgid: int, leader_start: int | None,
+                             timeout: float = 0.2) -> list[tuple[int, int]]:
+    """Observe a newly exited parent's group through a bounded settle window."""
+    deadline = time.monotonic() + timeout
+    while True:
+        members = _process_group_members(pgid, leader_start)
+        if members is None:
+            return [(-1, 0)] if _pgid_alive(pgid) else []
+        if members or time.monotonic() >= deadline:
+            return members
+        time.sleep(0.01)
+
+
+def kill_process_group(proc: subprocess.Popen, pgid: int | None = None,
+                       leader_start: int | None = None) -> None:
+    """Bounded TERM-to-KILL cleanup of the captured job process group.
+
+    Zombies are considered finished. On Linux, process start times are rechecked
+    before signalling so reused IDs are not targeted.
     """
     if pgid is None:
         pgid = proc.pid
+    if leader_start is None:
+        info = _process_info(pgid)
+        leader_start = info[3] if info is not None else None
 
-    def _term_group() -> None:
-        if not _pgid_alive(pgid):
-            return
-        try:
-            os.killpg(pgid, signal.SIGTERM)
-        except ProcessLookupError:
-            pass
-        except PermissionError:
-            pass
-        except Exception:
-            pass
-
-    def _kill_group() -> None:
-        if not _pgid_alive(pgid):
-            return
-        try:
-            os.killpg(pgid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        except PermissionError:
-            pass
-        except Exception:
-            pass
-
-    # Escalate even if parent already exited: descendants may still run.
-    _term_group()
+    _signal_group(pgid, leader_start, signal.SIGTERM)
+    if not _wait_group_gone(pgid, leader_start, 1.0):
+        _signal_group(pgid, leader_start, signal.SIGKILL)
+        _wait_group_gone(pgid, leader_start, 1.0)
     try:
-        proc.wait(timeout=5)
+        proc.wait(timeout=1)
     except subprocess.TimeoutExpired:
-        _kill_group()
         try:
             proc.kill()
-        except Exception:
+        except (ProcessLookupError, PermissionError):
             pass
         try:
-            proc.wait(timeout=5)
-        except Exception:
+            proc.wait(timeout=1)
+        except (subprocess.TimeoutExpired, ProcessLookupError):
             pass
-    except Exception:
-        try:
-            proc.kill()
-        except Exception:
-            pass
-        try:
-            proc.wait(timeout=5)
-        except Exception:
-            pass
-
-    # Final bounded check: if group remains alive (e.g. descendant ignored TERM
-    # and direct child already reaped), send KILL once more.
-    if _pgid_alive(pgid):
-        _kill_group()
 
 
 def run_job(job: Job, run_dir: Path) -> JobResult:
@@ -360,31 +419,43 @@ def run_job(job: Job, run_dir: Path) -> JobResult:
                              job.mandatory, job.timeout, STATUS_FAIL, None, duration, started_at, ended_at,
                              _display_path(log_path), msg)
         pgid = proc.pid
+        leader_info = _process_info(pgid)
+        leader_start = leader_info[3] if leader_info is not None else None
+        unexpected_descendants: list[int] = []
         try:
             proc.wait(timeout=job.timeout)
         except subprocess.TimeoutExpired:
             timed_out = True
-            kill_process_group(proc, pgid)
+            kill_process_group(proc, pgid, leader_start)
             try:
                 proc.wait(timeout=5)
             except Exception:
                 pass
         except KeyboardInterrupt:
-            kill_process_group(proc, pgid)
+            kill_process_group(proc, pgid, leader_start)
             try:
                 proc.wait(timeout=5)
             except Exception:
                 pass
             raise
-        # Best-effort cleanup for descendants that outlive the direct child.
-        if _pgid_alive(pgid):
-            kill_process_group(proc, pgid)
+        # A zero-exit parent is not successful while unexpected descendants are
+        # still running. Record the incomplete tree before bounded cleanup.
+        if not timed_out:
+            members = _post_exit_group_members(pgid, leader_start)
+            unexpected_descendants = [pid for pid, _ in members if pid != proc.pid]
+            if unexpected_descendants:
+                kill_process_group(proc, pgid, leader_start)
 
         exit_code = proc.returncode
         if timed_out:
             status = STATUS_TIMEOUT
             message = f"timed out after {job.timeout}s"
             log.write(f"\nRESULT: TIMEOUT after {job.timeout}s\n")
+        elif unexpected_descendants:
+            status = STATUS_FAIL
+            detail = "unknown" if unexpected_descendants == [-1] else ",".join(map(str, unexpected_descendants))
+            message = f"parent exit {exit_code}; cleaned surviving descendants pids={detail}"
+            log.write(f"\nRESULT: FAIL {message}\n")
         elif exit_code == 0:
             status = STATUS_PASS
             log.write("\nRESULT: PASS\n")

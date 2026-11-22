@@ -40,6 +40,14 @@ class ValidationRunnerTests(unittest.TestCase):
         defaults.update(kw)
         return self.runner.Job(**defaults)
 
+    def assert_process_finished(self, pid, message):
+        for _ in range(50):
+            info = self.runner._process_info(pid)
+            if info is None or info[0] == "Z":
+                return
+            time.sleep(0.02)
+        self.fail(f"{message}: process {pid} remains active")
+
     def test_successful_job_produces_pass(self):
         with tempfile.TemporaryDirectory() as td:
             run_dir = Path(td)
@@ -49,6 +57,15 @@ class ValidationRunnerTests(unittest.TestCase):
             self.assertEqual(r.exit_code, 0)
             self.assertTrue((run_dir / "j1.log").exists())
             self.assertIn("hello", (run_dir / "j1.log").read_text())
+
+    def test_parent_and_child_exit_normally_produces_pass(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            cmd = [sys.executable, "-c",
+                   "import subprocess,sys;"
+                   "subprocess.run([sys.executable,'-c','print(42)'],check=True)"]
+            r = self.runner.run_job(self.make_job(command=cmd), run_dir)
+            self.assertEqual((r.status, r.exit_code), ("PASS", 0))
 
     def test_nonzero_exit_produces_fail(self):
         with tempfile.TemporaryDirectory() as td:
@@ -191,34 +208,39 @@ class ValidationRunnerTests(unittest.TestCase):
             # Direct child spawns a grandchild in same process group, writes pid, exits.
             cmd = [sys.executable, "-c",
                    "import subprocess,sys,time;"
-                   "p=subprocess.Popen([sys.executable,'-c','import time,sys; sys.stdout.write(\\'x\\n\\'); sys.stdout.flush(); time.sleep(60)']);"
+                   "p=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)']);"
                    f"open(r'{pidfile}','w').write(str(p.pid));"]
             job = self.make_job(command=cmd, timeout=10)
             r = self.runner.run_job(job, run_dir)
-            self.assertIn(r.status, ("PASS", "FAIL", "TIMEOUT"))
+            self.assertEqual(r.status, "FAIL")
+            self.assertEqual(r.exit_code, 0)
+            self.assertIn("cleaned surviving descendants", r.message)
             self.assertTrue(pidfile.exists())
             gpid = int(pidfile.read_text().strip())
-            for _ in range(40):
-                try:
-                    os.kill(gpid, 0)
-                    time.sleep(0.1)
-                except ProcessLookupError:
-                    break
-            else:
-                try:
-                    os.kill(gpid, 9)
-                except Exception:
-                    pass
-                self.fail(f"grandchild still alive {gpid}")
+            self.assert_process_finished(gpid, "zero-exit descendant cleanup")
+
+    def test_nonzero_parent_with_surviving_child_fails_and_cleans_up(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            pidfile = run_dir / "child.pid"
+            cmd = [sys.executable, "-c",
+                   "import subprocess,sys;"
+                   "p=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)']);"
+                   f"open(r'{pidfile}','w').write(str(p.pid));sys.exit(7)"]
+            r = self.runner.run_job(self.make_job(command=cmd), run_dir)
+            self.assertEqual((r.status, r.exit_code), ("FAIL", 7))
+            self.assertIn("cleaned surviving descendants", r.message)
+            self.assert_process_finished(int(pidfile.read_text()), "nonzero descendant cleanup")
 
     def test_timeout_child_ignores_sigterm(self):
         with tempfile.TemporaryDirectory() as td:
             run_dir = Path(td)
             pidfile = run_dir / "child.pid"
             cmd = [sys.executable, "-c",
-                   "import signal,time,os,sys;"
-                   "signal.signal(signal.SIGTERM, signal.SIG_IGN);"
-                   f"open(r'{pidfile}','w').write(str(os.getpid())); sys.stdout.flush();"
+                   "import subprocess,time,sys;"
+                   "p=subprocess.Popen([sys.executable,'-c',"
+                   "'import signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); time.sleep(60)']);"
+                   f"open(r'{pidfile}','w').write(str(p.pid));"
                    "time.sleep(60)"]
             job = self.make_job(command=cmd, timeout=2)
             start = time.time()
@@ -227,18 +249,7 @@ class ValidationRunnerTests(unittest.TestCase):
             self.assertLess(time.time() - start, 20)
             if pidfile.exists():
                 pid = int(pidfile.read_text().strip())
-                for _ in range(30):
-                    try:
-                        os.kill(pid, 0)
-                        time.sleep(0.1)
-                    except ProcessLookupError:
-                        break
-                else:
-                    try:
-                        os.kill(pid, 9)
-                    except Exception:
-                        pass
-                    self.fail(f"child still alive {pid}")
+                self.assert_process_finished(pid, "SIGKILL escalation")
 
     def test_kill_process_group_already_gone(self):
         # Should be a no-op / not raise.
@@ -248,3 +259,23 @@ class ValidationRunnerTests(unittest.TestCase):
         # group may or may not be gone; call should be safe either way
         self.runner.kill_process_group(proc, pgid)
         self.runner.kill_process_group(proc, pgid)
+
+    def test_zombie_is_not_a_running_process_group(self):
+        proc = subprocess.Popen([sys.executable, "-c", "pass"], start_new_session=True)
+        info = self.runner._process_info(proc.pid)
+        self.assertIsNotNone(info)
+        start = info[3]
+        time.sleep(0.1)
+        self.assertFalse(self.runner._group_alive(proc.pid, start))
+        proc.wait(timeout=5)
+
+    def test_reused_leader_identity_is_not_targeted(self):
+        proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"],
+                                start_new_session=True)
+        info = self.runner._process_info(proc.pid)
+        self.assertIsNotNone(info)
+        start = info[3]
+        self.assertEqual(self.runner._process_group_members(proc.pid, start + 1), [])
+        self.assertIsNone(proc.poll())
+        self.runner.kill_process_group(proc, proc.pid, start)
+        self.assertIsNotNone(proc.returncode)
