@@ -21,7 +21,7 @@ A second occurrence triggers an automation candidate. Tasks with high risk or li
 | AUTO-01 | Build/smoke environment checks | `tools/doctor.sh` | R0.1/R0.6 | R0.1 PROCEDURE DOCUMENTED; SCRIPT NOT IMPLEMENTED |
 | AUTO-02 | Fast headless/unit regressions | `tools/test.sh` | R0.3/R0.6 | EXISTING UNITTEST SUITE; WRAPPER NOT IMPLEMENTED |
 | AUTO-03 | SDL graphics/display regression | `tools/test.sh --graphics` | R0.4/R0.6 | EXISTING UNITTEST COVERAGE + R0.4 BASELINE; WRAPPER DEFERRED TO R0.6 |
-| AUTO-04 | ASan/UBSan test matrix | `SANITIZE=1 tools/test.sh` | R0.5/R0.6 | NOT IMPLEMENTED |
+| AUTO-04 | ASan/UBSan test matrix | `SANITIZE=1 tools/test.sh` | R0.5/R0.6 | R0.5 REPRESENTATIVE EVIDENCE RECORDED; WRAPPER NOT IMPLEMENTED |
 | AUTO-05 | Revision-based gating and progress/logs | `python3 tools/validation/run.py R0.4` | R0.6 | NOT IMPLEMENTED |
 | AUTO-06 | Deterministic capture comparison | `python3 -m unittest discover -s tests -p test_render.py -v` | R0.4 | IMPLEMENTED IN EXISTING RENDER UNITTEST DRIVER |
 | AUTO-07 | Content provenance and banned-asset scanning | `tools/audit_content.py` (interface subject to design) | R1 | NOT IMPLEMENTED |
@@ -179,6 +179,67 @@ reviewed working tree, inspect the resulting manifest/archive diff and retained
 BMPs, and run the ordinary command again without that variable. Never update a
 baseline merely to make an unexplained failure pass.
 
+
+## Verified R0.5 sanitizer and performance baseline
+
+R0.5 evidence is recorded in [`docs/milestones/R0/R0.5.md`](../milestones/R0/R0.5.md).
+Raw logs are kept under ignored `build/validation/R0.5/logs/`.
+
+### Sanitizer runs (representative synthetic scope)
+
+Prerequisites: GCC with libasan/libubsan (validated with GCC 14.2.0), SDL3
+static build at `../cart/vendor/SDL/build/libSDL3.a`, Python 3. Existing test
+wrappers add `-fsanitize=address,undefined -fno-omit-frame-pointer` when
+`SANITIZE=1`.
+
+Representative bounded commands (run from repository root; capture stdout/stderr
+and exit code):
+
+```sh
+SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_engine.py -v
+SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_render.py -v
+SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_classic.py -v
+SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_display.py -v
+SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_presentation.py -v
+SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_save.py -v
+SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_config.py -v
+SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_controls.py -v
+SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_loading.py -v
+SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_audio.py -v
+SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_signon.py -v
+SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_dos_menus.py -v
+SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_dos_ui_reference.py -v
+SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_demo_sync.py -v
+```
+
+After runs, scan logs for `AddressSanitizer`, `UndefinedBehaviorSanitizer`,
+`LeakSanitizer`, `runtime error:`, and `SUMMARY:`. Any application-owned
+finding is A15-blocking until resolved or explicitly documented with owner.
+
+### Synthetic performance baseline
+
+`tests/synthetic_perf_benchmark.c` measures CPU renderer frame-time distributions
+for deterministic empty/populated synthetic scenes and, when compiled with
+`-DWOLF3D_BENCHMARK`, separates SDL convert/upload/present phases under
+SDL dummy/software. It requires no owned WL6 data.
+
+```sh
+SDK=../cart/vendor/SDL
+mkdir -p build/validation/R0.5
+gcc -std=c11 -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -g \
+  -I./src -I$SDK/include tests/synthetic_perf_benchmark.c \
+  src/engine/*.c src/platform/data_file.c src/platform/save_file.c \
+  $SDK/build/libSDL3.a -pthread -lm -o build/validation/R0.5/synthetic_perf_bench
+
+gcc -std=c11 -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -g \
+  -DWOLF3D_BENCHMARK -I./src -I$SDK/include tests/synthetic_perf_benchmark.c \
+  src/engine/*.c src/platform/*.c \
+  $SDK/build/libSDL3.a -pthread -lm -o build/validation/R0.5/synthetic_perf_bench_sdl
+```
+
+Run with synthetic `game_files()` data; record CSV stdout, stderr, exit code,
+compiler flags, OS/CPU/SDL metadata, and RSS/MM_TotalBytes. Do not invent
+target FPS pass/fail criteria.
 ## Required script contract
 
 - Compatible with the target toolchain; avoid unnecessary new dependencies.
