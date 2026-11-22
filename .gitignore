@@ -22,6 +22,8 @@ __pycache__/
 *.ppm
 [Ss][Ii][Gg][Nn][Oo][Nn].[Rr][Aa][Ww]
 
-# Third-party ECWolf remaster archives are local research inputs only.
-# Do not commit or redistribute these packs without verified permissions.
+# Third-party assets are local research inputs only.
+# Do not commit or redistribute them without verified permissions.
+/3rdparty/
+# Also block the previous ECWolf location against accidental recommits.
 /asset/ECWolf_RMST/
