@@ -124,23 +124,30 @@ static void bench_sdl(const char *data,const char *user)
         unsigned w=sizes[si][0],h=sizes[si][1];
         CHECK(DemoLoopStartGame(0)); setup_populated_scene();
         display_settings d; CHECK(VL_DisplayGet(&d));
-        d.high_resolution=true; d.smooth=false; d.render_width=w; d.render_height=h;
+        d.high_resolution=true; d.smooth=false; d.render_auto=false;
+        d.render_width=w; d.render_height=h;
         d.aspect=2; d.scale=0; d.width=1280; d.height=720; d.vsync=false;
         CHECK(VL_DisplaySet(&d));
+        CHECK(VL_DisplayGet(&d));
+        CHECK(d.high_resolution && !d.render_auto && d.render_width==w && d.render_height==h);
+        printf("META,sdl_render_selected,%ux%u,actual=%ux%u,auto=%u,high_res=%u\n",
+               w,h,d.render_width,d.render_height,(unsigned)d.render_auto,(unsigned)d.high_resolution);
         for(unsigned i=0;i<warmup;++i) { CHECK(!VL_PollQuit()); CHECK(GameDrawPaused()); CHECK(VW_UpdateScreen()); }
-        uint64_t total[120], convert[120], upload[120], present[120];
+        uint64_t frame_total[120], convert[120], upload[120], present[120];
         memset(&WL_Profile,0,sizeof(WL_Profile));
         for(unsigned i=0;i<iters;++i) {
             uint64_t c0=WL_Profile.convert,u0=WL_Profile.upload,p0=WL_Profile.present;
             uint64_t t0=SDL_GetTicksNS();
             CHECK(GameDrawPaused());
             CHECK(VW_UpdateScreen());
-            total[i]=SDL_GetTicksNS()-t0;
+            frame_total[i]=SDL_GetTicksNS()-t0;
             convert[i]=WL_Profile.convert-c0;
             upload[i]=WL_Profile.upload-u0;
             present[i]=WL_Profile.present-p0;
         }
-        report_samples("populated","sdl_total",w,h,iters,total);
+        /* frame_total includes game draw + SDL update path; convert/upload/present
+           are WL_PROFILE phases inside the SDL presentation path. */
+        report_samples("populated","frame_total",w,h,iters,frame_total);
         report_samples("populated","sdl_convert",w,h,iters,convert);
         report_samples("populated","sdl_upload",w,h,iters,upload);
         report_samples("populated","sdl_present",w,h,iters,present);

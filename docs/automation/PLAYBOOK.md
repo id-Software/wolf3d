@@ -212,6 +212,12 @@ SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_dos_ui_ref
 SANITIZE=1 timeout 1200 python3 -m unittest discover -s tests -p test_demo_sync.py -v
 ```
 
+Coverage caveat: suites compile instrumented C harness binaries when
+`SANITIZE=1` is set, but `test_engine.py`, `test_config.py`, and
+`test_signon.py` may also invoke the prebuilt `WOLF3D_BINARY` for some cases;
+those app subprocesses are not ASan/UBSan-instrumented unless rebuilt with
+sanitizers. Do not claim app-subprocess coverage as sanitized.
+
 After runs, scan logs for `AddressSanitizer`, `UndefinedBehaviorSanitizer`,
 `LeakSanitizer`, `runtime error:`, and `SUMMARY:`. Any application-owned
 finding is A15-blocking until resolved or explicitly documented with owner.
@@ -219,27 +225,23 @@ finding is A15-blocking until resolved or explicitly documented with owner.
 ### Synthetic performance baseline
 
 `tests/synthetic_perf_benchmark.c` measures CPU renderer frame-time distributions
-for deterministic empty/populated synthetic scenes and, when compiled with
-`-DWOLF3D_BENCHMARK`, separates SDL convert/upload/present phases under
-SDL dummy/software. It requires no owned WL6 data.
+for deterministic empty/populated synthetic scenes. With `-DWOLF3D_BENCHMARK`,
+it also records SDL `frame_total` (`GameDrawPaused()+VW_UpdateScreen()`) and
+separates WL_PROFILE `sdl_convert`/`sdl_upload`/`sdl_present` phases under SDL
+dummy/software. Fixed render dimensions are selected with `render_auto=false`
+and verified via `VL_DisplayGet()` after `VL_DisplaySet()`.
+
+Reproducible workflow:
 
 ```sh
-SDK=../cart/vendor/SDL
-mkdir -p build/validation/R0.5
-gcc -std=c11 -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -g \
-  -I./src -I$SDK/include tests/synthetic_perf_benchmark.c \
-  src/engine/*.c src/platform/data_file.c src/platform/save_file.c \
-  $SDK/build/libSDL3.a -pthread -lm -o build/validation/R0.5/synthetic_perf_bench
-
-gcc -std=c11 -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -g \
-  -DWOLF3D_BENCHMARK -I./src -I$SDK/include tests/synthetic_perf_benchmark.c \
-  src/engine/*.c src/platform/*.c \
-  $SDK/build/libSDL3.a -pthread -lm -o build/validation/R0.5/synthetic_perf_bench_sdl
+python3 tools/r0_5_synthetic_perf.py --timeout 600
 ```
 
-Run with synthetic `game_files()` data; record CSV stdout, stderr, exit code,
-compiler flags, OS/CPU/SDL metadata, and RSS/MM_TotalBytes. Do not invent
-target FPS pass/fail criteria.
+The script generates synthetic data via `tests/game_fixtures.py`, compiles
+CPU-only and SDL-profile benchmark binaries, runs them, and writes logs/CSV/
+summary under `build/validation/R0.5/`. It requires no owned WL6 data and no
+network. Do not invent target FPS pass/fail criteria.
+
 ## Required script contract
 
 - Compatible with the target toolchain; avoid unnecessary new dependencies.
