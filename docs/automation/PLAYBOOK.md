@@ -19,15 +19,15 @@ A second occurrence triggers an automation candidate. Tasks with high risk or li
 | ID | Repeated work | Proposed canonical interface | Planned milestone | Status |
 | --- | --- | --- | --- | --- |
 | AUTO-01 | Build/smoke environment checks | `tools/doctor.sh` | R0.1/R0.6 | R0.1 PROCEDURE DOCUMENTED; SCRIPT NOT IMPLEMENTED |
-| AUTO-02 | Fast headless/unit regressions | `tools/test.sh` | R0.3/R0.6 | EXISTING UNITTEST SUITE; WRAPPER NOT IMPLEMENTED |
-| AUTO-03 | SDL graphics/display regression | `tools/test.sh --graphics` | R0.4/R0.6 | EXISTING UNITTEST COVERAGE + R0.4 BASELINE; WRAPPER DEFERRED TO R0.6 |
+| AUTO-02 | Fast headless/unit regressions | `tools/test.sh` | R0.3/R0.6 | IMPLEMENTED (thin wrapper to tools/validation/run.py) |
+| AUTO-03 | SDL graphics/display regression | `tools/test.sh --graphics` | R0.4/R0.6 | IMPLEMENTED (R0.4 graphics jobs selected via runner) |
 | AUTO-04 | ASan/UBSan test matrix | `SANITIZE=1 tools/test.sh` | R0.5/R0.6 | R0.5 REPRESENTATIVE EVIDENCE RECORDED; WRAPPER NOT IMPLEMENTED |
-| AUTO-05 | Revision-based gating and progress/logs | `python3 tools/validation/run.py R0.4` | R0.6 | NOT IMPLEMENTED |
+| AUTO-05 | Revision-based gating and progress/logs | `python3 tools/validation/run.py R0.4` | R0.6 | IMPLEMENTED (milestone selection, logs, JSON summary, bounded timeouts) |
 | AUTO-06 | Deterministic capture comparison | `python3 -m unittest discover -s tests -p test_render.py -v` | R0.4 | IMPLEMENTED IN EXISTING RENDER UNITTEST DRIVER |
 | AUTO-07 | Content provenance and banned-asset scanning | `tools/audit_content.py` (interface subject to design) | R1 | NOT IMPLEMENTED |
 | AUTO-08 | Map/content fixture validation | `tools/validate_content.py` (interface subject to design) | R2 | NOT IMPLEMENTED |
 | AUTO-09 | Workshop round-trip integration | revision-selected test fixture | R6.6 | NOT IMPLEMENTED |
-| AUTO-10 | PR evidence/checklist creation | CI/template based on real test metadata | R0.6 | NOT IMPLEMENTED |
+| AUTO-10 | PR evidence/checklist creation | CI/template based on real test metadata | R0.6 | PARTIAL (CI workflow added; real-run confirmation pending) |
 | AUTO-11 | Texture/resource dimension inventory | extend future `tools/audit_content.py` with bounded metadata-only inspection | R1/R2 | R0.1 ONE-OFF INVENTORY ONLY; NOT IMPLEMENTED |
 
 The table is a **backlog**; no script is claimed to exist. Replace speculative names with tested stable commands when each revision delivers.
@@ -36,7 +36,7 @@ The table is a **backlog**; no script is claimed to exist. Replace speculative n
 
 These commands were inspected and executed on 22 November 2026. Full results,
 limitations and tool versions are in [`docs/milestones/R0/R0.1.md`](../milestones/R0/R0.1.md).
-They are the current command surface, not the proposed R0.6 wrappers.
+They remain valid low-level commands. R0.6 also provides `tools/test.sh` and `tools/validation/run.py` as the canonical validation surface; see "Verified R0.6 validation command surface".
 
 Prerequisites:
 
@@ -241,6 +241,42 @@ The script generates synthetic data via `tests/game_fixtures.py`, compiles
 CPU-only and SDL-profile benchmark binaries, runs them, and writes logs/CSV/
 summary under `build/validation/R0.5/`. It requires no owned WL6 data and no
 network. Do not invent target FPS pass/fail criteria.
+
+
+## Verified R0.6 validation command surface
+
+Evidence: [`docs/milestones/R0/R0.6.md`](../milestones/R0/R0.6.md). Logs/JSON
+under ignored `build/validation/<milestone>/<run-id>/`.
+
+### Commands
+
+```sh
+python3 tools/validation/run.py R0.3
+python3 tools/validation/run.py R0.4
+python3 tools/validation/run.py R0.5
+python3 tools/validation/run.py R0.6
+python3 tools/validation/run.py all
+python3 tools/validation/run.py R0.6 --list
+python3 tools/validation/run.py R0.6 --dry-run
+
+tools/test.sh
+tools/test.sh --graphics
+tools/test.sh --sanitizer
+tools/test.sh --performance
+tools/test.sh --all
+```
+
+### Behaviour
+
+- Each job prints START, timeout, command; ends PASS/FAIL/TIMEOUT/SKIP/NOT RUN
+  with exit code and duration.
+- Jobs run in new process groups; timeout kills the group (TERM then KILL).
+- Mandatory job failure/timeout/NOT RUN causes overall nonzero exit.
+- `WOLF3D_UPDATE_BASELINES` is stripped from job environments.
+- JSON summary: `build/validation/<milestone>/<run-id>/summary.json` (schema v1).
+- CI workflow `.github/workflows/validation.yml` runs R0.6 mandatory synthetic
+  tests on push/PR; sanitizer/perf/owned-data/GPU are not default CI gates.
+  CI pass is not claimed until a real workflow run confirms it.
 
 ## Required script contract
 

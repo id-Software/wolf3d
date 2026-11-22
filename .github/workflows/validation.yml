@@ -1,0 +1,67 @@
+name: Validation
+
+on:
+  push:
+    branches: [docs/revival-roadmap-and-validation]
+  pull_request:
+    branches: [docs/revival-roadmap-and-validation]
+
+permissions:
+  contents: read
+
+jobs:
+  r06-mandatory-synthetic:
+    name: R0.6 mandatory synthetic (CPU+graphics+runner)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SDL_SDK: ${{ github.workspace }}/.cache/SDL
+      SDL_VIDEODRIVER: dummy
+      SDL_RENDER_DRIVER: software
+      SDL_AUDIODRIVER: dummy
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache SDL3 build
+        id: cache-sdl
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SDL_SDK }}
+          key: sdl3-linux-${{ runner.os }}-release-3.2.8
+
+      - name: Build SDL3 (if cache miss)
+        if: steps.cache-sdl.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build build-essential pkg-config
+          git clone --depth 1 --branch release-3.2.8 https://github.com/libsdl-org/SDL.git /tmp/sdl-src
+          cmake -S /tmp/sdl-src -B /tmp/sdl-build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DSDL_SHARED=OFF -DSDL_TEST_LIBRARY=OFF \
+            -DCMAKE_INSTALL_PREFIX="$SDL_SDK"
+          cmake --build /tmp/sdl-build -j2
+          cmake --install /tmp/sdl-build
+          # Also provide build/libSDL3.a path expected by tests
+          mkdir -p "$SDL_SDK/build"
+          cp /tmp/sdl-build/libSDL3.a "$SDL_SDK/build/libSDL3.a"
+
+      - name: Verify prerequisites
+        run: |
+          set -euxo pipefail
+          python3 --version
+          gcc --version | head -1
+          test -f "$SDL_SDK/build/libSDL3.a"
+
+      - name: Run R0.6 mandatory synthetic validation
+        run: |
+          set -euxo pipefail
+          python3 tools/validation/run.py R0.6
+
+      - name: Upload validation evidence on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r06-validation-evidence
+          path: build/validation/
+          if-no-files-found: warn
