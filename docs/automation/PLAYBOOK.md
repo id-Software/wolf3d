@@ -98,6 +98,41 @@ captures. In R0.1 the owned-data form ran 153 tests with no skips and exit 0.
 The suite already exercises both Classic and Enhanced SDL paths, but it does
 not replace the planned R0.4 capture/human-review gate or R0.5 sanitizer gate.
 
+## Architecture inspection procedure
+
+R0.1 and R0.2 both required the same source-boundary inventory. Until a
+reviewed helper exists, use this deterministic, read-only procedure from the
+repository root and save its output in the revision evidence directory:
+
+```sh
+mkdir -p build/validation/R0.2
+
+{
+  git rev-parse HEAD
+  find src -type f \( -name '*.c' -o -name '*.h' \) -print | sort
+  rg -n '^#include[[:space:]]+[<"]' src
+  rg -n '#include[[:space:]]+<SDL3/' src
+  ctags -x --kinds-C=v src/engine/*.c src/engine/*.h
+  rg -n '\b(gamestate|player|tilemap|actorat|objlist|statobjlist|doorobjlist|spotvis|areabyplayer)\b' src
+} > build/validation/R0.2/architecture-inspection.log
+```
+
+Replace `R0.2` with the selected revision. `ctags` must be available and its
+implementation/version should be noted when output format matters. The scan
+finds dependency and global-state candidates; it does not prove call direction
+or ownership. Trace startup, shutdown, allocation, mutation and borrowed
+pointer lifetime in the implementation before recording an architecture edge.
+For Mermaid diagrams, review every arrow against that trace and check code
+fences are balanced. Do not infer purity from a function name: R0.2 found
+Classic rendering also mutates visibility/activation bookkeeping.
+
+**Automation candidate AUTO-12:** add a small architecture inventory command
+after R0.3 establishes test helpers. It should emit sorted direct includes,
+SDL include violations outside the approved platform/main allow-list, and a
+curated global-state reference inventory. It must not attempt to infer semantic
+ownership. Add golden/failure tests and extend this canonical procedure rather
+than creating revision-specific scan scripts.
+
 Store repeatable revision evidence under ignored
 `build/validation/<revision>/`. Record each command and exit separately; a
 successful compile is not a test result. Until R0.6, callers must supply their
