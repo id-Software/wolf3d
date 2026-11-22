@@ -7,6 +7,7 @@
 #include "engine/ID_VL.h"
 #include "engine/WL_MENU.h"
 #include "engine/WL_MAIN.h"
+#include "engine/WL_PRESENT.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -361,35 +362,67 @@ static void CaptureReplayState(replay_state *s)
     s->pwallstate=pwallstate;s->pwallpos=pwallpos;
     s->player_next_null=player.next==NULL;s->player_state_null=player.state==NULL;
 }
+/* Presentation is copied from authoritative state after a tic; it never
+   steps the simulation. Sample() writes only caller-owned storage. */
+static void StepPresent(uint64_t t,unsigned every,wl_present_snapshot *sample,unsigned *captures)
+{
+    CHECK(GameStep(t));
+    if(every && t%every==0) {
+        WL_PresentCapture(t);
+        CHECK(WL_PresentSample(WL_TickNS(t),sample));
+        CHECK(sample->simulation_clock==gamestate.TimeCount);
+        ++*captures;
+    }
+}
 /* Same logical input script for every session, one 70 Hz tic per GameStep. */
-static void ReplayInputs(void)
+static void ReplayInputs(unsigned every,wl_present_snapshot *sample,unsigned *captures)
 {
     uint64_t t=0;
     IN_KeyEvent(sc_UpArrow,true); /* walk east up to the closed door */
-    for(unsigned i=0;i<40;++i) CHECK(GameStep(++t));
+    for(unsigned i=0;i<40;++i) StepPresent(++t,every,sample,captures);
     IN_KeyEvent(sc_UpArrow,false);
-    CHECK(GameStep(++t));
-    Key(sc_Space);CHECK(GameStep(++t)); /* use the door */
+    StepPresent(++t,every,sample,captures);
+    Key(sc_Space);StepPresent(++t,every,sample,captures); /* use the door */
     IN_KeyEvent(sc_UpArrow,true);
-    for(unsigned i=0;i<10;++i) CHECK(GameStep(++t));
+    for(unsigned i=0;i<10;++i) StepPresent(++t,every,sample,captures);
     IN_KeyEvent(sc_UpArrow,false);
     IN_KeyEvent(sc_RightArrow,true);
-    for(unsigned i=0;i<4;++i) CHECK(GameStep(++t));
+    for(unsigned i=0;i<4;++i) StepPresent(++t,every,sample,captures);
     IN_KeyEvent(sc_RightArrow,false);
     IN_KeyEvent(sc_UpArrow,true);
-    for(unsigned i=0;i<4;++i) CHECK(GameStep(++t));
+    for(unsigned i=0;i<4;++i) StepPresent(++t,every,sample,captures);
     IN_KeyEvent(sc_UpArrow,false);
-    CHECK(GameStep(++t));
+    StepPresent(++t,every,sample,captures);
     CHECK(t==61);
+}
+static void CheckReplayStatesEqual(const replay_state *a,const replay_state *b)
+{
+    CHECK(a->x==b->x && a->y==b->y);
+    CHECK(a->tilex==b->tilex && a->tiley==b->tiley && a->angle==b->angle);
+    CHECK(a->time_count==b->time_count);
+    CHECK(a->health==b->health && a->ammo==b->ammo && a->lives==b->lives);
+    CHECK(a->keys==b->keys && a->score==b->score);
+    CHECK(a->episode==b->episode && a->mapon==b->mapon);
+    CHECK(a->difficulty==b->difficulty && a->weapon==b->weapon);
+    CHECK(a->playstate==b->playstate);
+    CHECK(a->objcount==b->objcount && a->statcount==b->statcount && a->doornum==b->doornum);
+    CHECK(a->door_x==b->door_x && a->door_y==b->door_y && a->door_lock==b->door_lock);
+    CHECK(a->door_vertical==b->door_vertical && a->door_action==b->door_action);
+    CHECK(a->door_position==b->door_position && a->door_ticcount==b->door_ticcount);
+    CHECK(a->door_reserved==b->door_reserved && a->door_tile==b->door_tile);
+    CHECK(a->pwallstate==b->pwallstate && a->pwallpos==b->pwallpos);
+    CHECK(a->player_next_null==b->player_next_null && a->player_state_null==b->player_state_null);
 }
 static replay_state RunReplaySession(void)
 {
     replay_state s;
+    unsigned captures=0;
     IN_ClearKeysDown(); /* no pressed/held keys leak into a fresh session */
     CHECK(GameStartMap(0,0,2,42)); /* fixed synthetic map, difficulty and seed */
     CHECK(player.tilex==2 && player.tiley==2 && player.angle==0);
     CHECK(gamestate.TimeCount==0 && gamestate.health==100 && gamestate.ammo==8);
-    ReplayInputs();
+    ReplayInputs(0,NULL,&captures);
+    CHECK(captures==0);
     CaptureReplayState(&s);
     CHECK(s.time_count==61 && s.playstate==ex_playing);
     CHECK(s.x!=2*TILEGLOBAL+32768); /* movement really changed authoritative state */
@@ -401,21 +434,28 @@ static void TestDeterministicReplay(void)
 {
     replay_state first=RunReplaySession();
     replay_state second=RunReplaySession();
-    CHECK(first.x==second.x && first.y==second.y);
-    CHECK(first.tilex==second.tilex && first.tiley==second.tiley && first.angle==second.angle);
-    CHECK(first.time_count==second.time_count);
-    CHECK(first.health==second.health && first.ammo==second.ammo && first.lives==second.lives);
-    CHECK(first.keys==second.keys && first.score==second.score);
-    CHECK(first.episode==second.episode && first.mapon==second.mapon);
-    CHECK(first.difficulty==second.difficulty && first.weapon==second.weapon);
-    CHECK(first.playstate==second.playstate);
-    CHECK(first.objcount==second.objcount && first.statcount==second.statcount && first.doornum==second.doornum);
-    CHECK(first.door_x==second.door_x && first.door_y==second.door_y && first.door_lock==second.door_lock);
-    CHECK(first.door_vertical==second.door_vertical && first.door_action==second.door_action);
-    CHECK(first.door_position==second.door_position && first.door_ticcount==second.door_ticcount);
-    CHECK(first.door_reserved==second.door_reserved && first.door_tile==second.door_tile);
-    CHECK(first.pwallstate==second.pwallstate && first.pwallpos==second.pwallpos);
-    CHECK(first.player_next_null==second.player_next_null && first.player_state_null==second.player_state_null);
+    CheckReplayStatesEqual(&first,&second);
+}
+static replay_state RunPresentationSession(unsigned every,unsigned *captures)
+{
+    replay_state s;
+    wl_present_snapshot sample;
+    IN_ClearKeysDown();
+    CHECK(GameStartMap(0,0,2,42));
+    CHECK(player.tilex==2 && player.tiley==2 && player.angle==0);
+    *captures=0;
+    ReplayInputs(every,&sample,captures);
+    CaptureReplayState(&s);
+    GameStop();
+    return s;
+}
+static void TestPresentationRateDeterminism(void)
+{
+    unsigned every_tick=0,every_fourth=0;
+    replay_state a=RunPresentationSession(1,&every_tick);
+    replay_state b=RunPresentationSession(4,&every_fourth);
+    CHECK(every_tick==61 && every_fourth==15); /* genuinely different schedules */
+    CheckReplayStatesEqual(&a,&b);
 }
 static void TestOwnedWalk(void)
 {
@@ -445,7 +485,7 @@ static void TestMenuGame(void)
 int main(int argc,char **argv)
 {
     CHECK(argc>=2);TestExpand();TestFixed();TestScale();MM_Startup();CHECK(!GameProbe());CHECK(CA_Startup(argv[1]));
-    CHECK(VL_SetPalette(gamepal,768));TestInputMenu();TestWorld(argc==2,argc>3 ? argv[3] : NULL);TestMapBounds();if(argc==2) TestDoors();TestSimulation();if(argc==2) TestRestart();if(argc==2) TestDeterministicReplay();if(argc>2) TestOwnedWalk();TestMenuGame();
+    CHECK(VL_SetPalette(gamepal,768));TestInputMenu();TestWorld(argc==2,argc>3 ? argv[3] : NULL);TestMapBounds();if(argc==2) TestDoors();TestSimulation();if(argc==2) TestRestart();if(argc==2) TestDeterministicReplay();if(argc==2) TestPresentationRateDeterminism();if(argc>2) TestOwnedWalk();TestMenuGame();
     GameStop();CA_Shutdown();MM_Shutdown();CHECK(!MM_TotalBytes());
     puts("Original map/VSWAP, fixed-point ray/scaler, movement and menu/game tests passed.");return 0;
 }
