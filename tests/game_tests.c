@@ -13,6 +13,7 @@
 #include <limits.h>
 #define CHECK(x) do { if (!(x)) { fprintf(stderr,"%d: %s (%s)\n",__LINE__,#x,CA_Error()); exit(1); } } while (0)
 #include "finish_loading.h"
+extern statetype s_grdstand;
 static void TestExpand(void)
 {
     uint16_t out[12]; memset(out,0xcc,sizeof(out));
@@ -242,6 +243,86 @@ static void TestSimulation(void)
     CHECK(GameStart(0));IN_KeyEvent(sc_UpArrow,true);CHECK(GameStep(10));CHECK(player.x==fine.x && player.y==fine.y);
     GameStop();
 }
+typedef struct {
+    int32_t x,y;
+    int tilex,tiley,angle;
+    int health,ammo,lives,episode,mapon,difficulty;
+    uint32_t time_count;
+    int playstate;
+    unsigned objcount,statcount,doornum;
+    int door_action;
+    unsigned door_position,door_ticcount;
+    unsigned pwallstate,pwallpos;
+    int pwallx,pwally,pwalldir;
+    bool player_next_null,player_state_null;
+    bool actor_reserved,static_blocked,pushable_cell;
+    w3r_byte map_tile,door_tile;
+} restart_state;
+static void CaptureRestartState(restart_state *s)
+{
+    memset(s,0,sizeof(*s));
+    s->x=player.x;s->y=player.y;
+    s->tilex=player.tilex;s->tiley=player.tiley;s->angle=player.angle;
+    s->health=gamestate.health;s->ammo=gamestate.ammo;s->lives=gamestate.lives;
+    s->episode=gamestate.episode;s->mapon=gamestate.mapon;s->difficulty=gamestate.difficulty;
+    s->time_count=gamestate.TimeCount;s->playstate=(int)playstate;
+    s->objcount=objcount;s->statcount=statcount;s->doornum=doornum;
+    CHECK(doornum==1);
+    s->door_action=(int)doorobjlist[0].action;
+    s->door_position=doorobjlist[0].position;s->door_ticcount=doorobjlist[0].ticcount;
+    s->pwallstate=pwallstate;s->pwallpos=pwallpos;
+    s->pwallx=pwallx;s->pwally=pwally;s->pwalldir=pwalldir;
+    s->player_next_null=player.next==NULL;s->player_state_null=player.state==NULL;
+    s->actor_reserved=actorat[10][10]!=NULL;s->static_blocked=staticblock[10][10];
+    s->pushable_cell=pushable[10][10];s->map_tile=tilemap[10][10];s->door_tile=tilemap[6][2];
+}
+static restart_state RunRestartCycle(void)
+{
+    restart_state before,after;
+    CHECK(GameStart(0));
+    CaptureRestartState(&before);
+    CHECK(before.x==2*TILEGLOBAL+32768 && before.y==2*TILEGLOBAL+32768);
+    CHECK(before.tilex==2 && before.tiley==2 && before.angle==0);
+    CHECK(before.health==100 && before.ammo==8 && before.lives==3);
+    CHECK(before.playstate==ex_playing && before.time_count==0);
+    CHECK(before.objcount==0 && before.statcount==0 && before.doornum==1);
+    CHECK(before.door_action==dr_closed && before.door_position==0 && before.door_ticcount==0);
+    CHECK(before.door_tile==128 && before.map_tile==0);
+    CHECK(before.player_next_null && before.player_state_null);
+    CHECK(!before.actor_reserved && !before.static_blocked && !before.pushable_cell);
+    CHECK(before.pwallstate==0 && before.pwallpos==0);
+    CHECK(before.pwallx==0 && before.pwally==0 && before.pwalldir==0);
+
+    Key(sc_UpArrow);CHECK(GameStep(1));
+    CHECK(player.x!=before.x || player.y!=before.y);
+
+    objtype *reserved=SpawnActor(10,10,&s_grdstand);
+    CHECK(reserved && actorat[10][10]==reserved);
+    staticblock[10][10]=true;tilemap[10][10]=1;
+    OpenDoor(0);MoveDoors();
+    pushable[10][10]=true;pwallstate=1;pwallpos=32;pwallx=10;pwally=10;pwalldir=east;
+    CHECK(actorat[10][10] && staticblock[10][10] && tilemap[10][10]==1);
+    CHECK(doorobjlist[0].action==dr_opening && doorobjlist[0].position==1024);
+    CHECK(pwallstate==1 && pwallpos==32 && pushable[10][10]);
+
+    GameStop();
+    CHECK(!CA_Map() && !objcount && !statcount && !doornum);
+    CHECK(!actorat[10][10] && !staticblock[10][10] && !pushable[10][10]);
+    CHECK(pwallstate==0 && pwallpos==0);
+    CHECK(pwallx==0 && pwally==0 && pwalldir==0);
+
+    CHECK(GameStart(0));
+    CaptureRestartState(&after);
+    CHECK(memcmp(&before,&after,sizeof(before))==0);
+    return after;
+}
+static void TestRestart(void)
+{
+    restart_state first=RunRestartCycle();
+    restart_state second=RunRestartCycle();
+    CHECK(memcmp(&first,&second,sizeof(first))==0);
+    GameStop();
+}
 static void TestOwnedWalk(void)
 {
     CHECK(GameStart(0));int start=player.tilex,door=0;
@@ -270,7 +351,7 @@ static void TestMenuGame(void)
 int main(int argc,char **argv)
 {
     CHECK(argc>=2);TestExpand();TestFixed();TestScale();MM_Startup();CHECK(!GameProbe());CHECK(CA_Startup(argv[1]));
-    CHECK(VL_SetPalette(gamepal,768));TestInputMenu();TestWorld(argc==2,argc>3 ? argv[3] : NULL);TestMapBounds();if(argc==2) TestDoors();TestSimulation();if(argc>2) TestOwnedWalk();TestMenuGame();
+    CHECK(VL_SetPalette(gamepal,768));TestInputMenu();TestWorld(argc==2,argc>3 ? argv[3] : NULL);TestMapBounds();if(argc==2) TestDoors();TestSimulation();TestRestart();if(argc>2) TestOwnedWalk();TestMenuGame();
     GameStop();CA_Shutdown();MM_Shutdown();CHECK(!MM_TotalBytes());
     puts("Original map/VSWAP, fixed-point ray/scaler, movement and menu/game tests passed.");return 0;
 }
