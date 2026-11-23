@@ -7,10 +7,10 @@
 
 **Validation date:** 23 November 2026 (Australia/Adelaide)
 
-**Overall:** **PARTIAL — sign-off recommended, reviewer approval pending.**
-A01-A21 pass within their stated evidence scopes. A22 remains PARTIAL until an
-independent reviewer explicitly accepts the architecture/test review. This
-report does not approve R1/R2 implementation and does not merge PR #18.
+**Overall:** **PASS — R0 milestone CLOSED for the documented Linux synthetic scope.**
+A01-A22 pass within their stated evidence scopes. An independent ChatGPT
+reviewer has explicitly approved the architecture/test review (A22). R0
+milestone is closed for the documented Linux synthetic scope.
 
 ## Evidence sources and environment
 
@@ -111,9 +111,9 @@ work. Platform and licensing exclusions are recorded separately below.
 | **A19** hangs/unsupported jobs surfaced truthfully | **PASS** | Runner tests passed timeout, TERM-ignoring child, orphan, zombie, reused-PID and missing-prerequisite cases. Non-Linux `/proc` behavior remains NOT RUN, not promoted. |
 | **A20** all critical criteria pass for tested targets | **PASS** | A01-A19 pass for the recorded Linux synthetic scope; skipped owned-data and unsupported targets are outside those pass claims and separately visible. |
 | **A21** out-of-scope platforms recorded separately | **PASS** | See the platform matrix below. Wine/cross-build evidence is not physical Windows approval. |
-| **A22** architecture/test review explicitly approved before R1/R2 | **PARTIAL** | R0.7 completes the review and recommends sign-off, but final independent reviewer approval is not yet recorded. R0 stays open and implementation is not authorised. |
+| **A22** architecture/test review explicitly approved before R1/R2 | **PASS** | An independent ChatGPT reviewer has approved the architecture and testing baseline for the documented Linux synthetic scope. |
 
-Summary: **21 PASS, 0 FAIL, 1 PARTIAL, 0 NOT RUN** at the criterion level.
+Summary: **22 PASS, 0 FAIL, 0 PARTIAL, 0 NOT RUN** at the criterion level.
 The PARTIAL is the final approval gate, not a hidden test failure.
 
 ## Graphics evidence
@@ -221,7 +221,6 @@ The detailed proposed contract and sequence are in [`R0.7.md`](R0.7.md).
 
 | Issue | Impact | Required next action |
 | --- | --- | --- |
-| A22 reviewer approval pending | R0 remains open; R1/R2 implementation is not approved. | Independent reviewer accepts this report or returns concrete findings. |
 | Physical/platform validation gaps | Platform-specific defects may remain. | Record future target-specific runs; never convert absence into PASS. |
 | Owned-data skips | Current review does not refresh proprietary-data compatibility. | Optional lawful private rerun using `WOLF3D_DATA`; keep data/captures ignored. |
 | Sanitizer application gap | Prebuilt app subprocesses in some wrappers may be unsanitized. | Preserve bounded claim or approve a sanitizer-built app workflow later. |
@@ -236,7 +235,7 @@ The detailed proposed contract and sequence are in [`R0.7.md`](R0.7.md).
 - **Performance baseline:** PASS as evidence, with no target gate.
 - **Unsupported platforms:** NOT RUN and non-blocking for this Linux baseline.
 - **Licensing/release clearance:** open R1 work, not misreported as R0 PASS.
-- **R0 milestone:** PARTIAL pending A22 final reviewer approval.
+- **R0 milestone:** CLOSED for the documented Linux synthetic scope.
 
 Recommendation: approve R0 after reviewing the two R0.7 reports and explicitly
 recording A22. Do not merge PR #18 automatically and do not begin R1/R2
