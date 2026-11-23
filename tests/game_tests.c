@@ -7,12 +7,14 @@
 #include "engine/ID_VL.h"
 #include "engine/WL_MENU.h"
 #include "engine/WL_MAIN.h"
+#include "engine/WL_PRESENT.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #define CHECK(x) do { if (!(x)) { fprintf(stderr,"%d: %s (%s)\n",__LINE__,#x,CA_Error()); exit(1); } } while (0)
 #include "finish_loading.h"
+extern statetype s_grdstand;
 static void TestExpand(void)
 {
     uint16_t out[12]; memset(out,0xcc,sizeof(out));
@@ -139,6 +141,36 @@ static void TestWorld(bool synthetic,const char *dump)
     }
     ShutdownGameLevel();
 }
+static void TestMapBounds(void)
+{
+    CHECK(GameStart(0));
+    /* Reset actor/collision grids, then use a fully open traversable map so the
+       only possible obstruction is the coordinate bound under test. */
+    InitObjects();
+    memset(tilemap,0,sizeof(tilemap));
+    objtype probe=player;
+    const int32_t inside_x=3*TILEGLOBAL+32768,inside_y=5*TILEGLOBAL+32768;
+    probe.x=inside_x;probe.y=inside_y;
+    probe.x=MINDIST-1;CHECK(!TryMove(&probe));
+    probe.x=MINDIST;CHECK(TryMove(&probe));
+    probe.x=64*TILEGLOBAL-MINDIST;CHECK(!TryMove(&probe));
+    probe.x=64*TILEGLOBAL-MINDIST-1;CHECK(TryMove(&probe));
+    probe.x=inside_x;
+    probe.y=MINDIST-1;CHECK(!TryMove(&probe));
+    probe.y=MINDIST;CHECK(TryMove(&probe));
+    probe.y=64*TILEGLOBAL-MINDIST;CHECK(!TryMove(&probe));
+    probe.y=64*TILEGLOBAL-MINDIST-1;CHECK(TryMove(&probe));
+
+    /* An off-map move is refused outright, not slid along an open axis. */
+    player.x=63*TILEGLOBAL+32768;player.y=inside_y;
+    int32_t x=player.x,y=player.y;
+    ClipMove(&player,TILEGLOBAL/2,TILEGLOBAL/2);
+    CHECK(player.x==x && player.y==y);
+    player.x=32768;player.y=inside_y;x=player.x;y=player.y;
+    ClipMove(&player,-TILEGLOBAL/2-1,-TILEGLOBAL/2);
+    CHECK(player.x==x && player.y==y);
+    GameStop(); /* ShutdownGameLevel -> InitObjects resets actorat/staticblock. */
+}
 static void TestDoors(void)
 {
     CHECK(SetupGameLevel());
@@ -212,6 +244,248 @@ static void TestSimulation(void)
     CHECK(GameStart(0));IN_KeyEvent(sc_UpArrow,true);CHECK(GameStep(10));CHECK(player.x==fine.x && player.y==fine.y);
     GameStop();
 }
+typedef struct {
+    int32_t x,y;
+    int tilex,tiley,angle;
+    int health,ammo,lives,episode,mapon,difficulty;
+    uint32_t time_count;
+    int playstate;
+    unsigned objcount,statcount,doornum;
+    int door_action;
+    unsigned door_position,door_ticcount;
+    unsigned pwallstate,pwallpos;
+    int pwallx,pwally,pwalldir;
+    bool player_next_null,player_state_null;
+    bool actor_reserved,static_blocked,pushable_cell;
+    w3r_byte map_tile,door_tile;
+} restart_state;
+static void CaptureRestartState(restart_state *s)
+{
+    memset(s,0,sizeof(*s));
+    s->x=player.x;s->y=player.y;
+    s->tilex=player.tilex;s->tiley=player.tiley;s->angle=player.angle;
+    s->health=gamestate.health;s->ammo=gamestate.ammo;s->lives=gamestate.lives;
+    s->episode=gamestate.episode;s->mapon=gamestate.mapon;s->difficulty=gamestate.difficulty;
+    s->time_count=gamestate.TimeCount;s->playstate=(int)playstate;
+    s->objcount=objcount;s->statcount=statcount;s->doornum=doornum;
+    CHECK(doornum==1);
+    s->door_action=(int)doorobjlist[0].action;
+    s->door_position=doorobjlist[0].position;s->door_ticcount=doorobjlist[0].ticcount;
+    s->pwallstate=pwallstate;s->pwallpos=pwallpos;
+    s->pwallx=pwallx;s->pwally=pwally;s->pwalldir=pwalldir;
+    s->player_next_null=player.next==NULL;s->player_state_null=player.state==NULL;
+    s->actor_reserved=actorat[10][10]!=NULL;s->static_blocked=staticblock[10][10];
+    s->pushable_cell=pushable[10][10];s->map_tile=tilemap[10][10];s->door_tile=tilemap[6][2];
+}
+static restart_state RunRestartCycle(void)
+{
+    restart_state before,after;
+    CHECK(GameStart(0));
+    CaptureRestartState(&before);
+    CHECK(before.x==2*TILEGLOBAL+32768 && before.y==2*TILEGLOBAL+32768);
+    CHECK(before.tilex==2 && before.tiley==2 && before.angle==0);
+    CHECK(before.health==100 && before.ammo==8 && before.lives==3);
+    CHECK(before.playstate==ex_playing && before.time_count==0);
+    CHECK(before.objcount==0 && before.statcount==0 && before.doornum==1);
+    CHECK(before.door_action==dr_closed && before.door_position==0 && before.door_ticcount==0);
+    CHECK(before.door_tile==128 && before.map_tile==0);
+    CHECK(before.player_next_null && before.player_state_null);
+    CHECK(!before.actor_reserved && !before.static_blocked && !before.pushable_cell);
+    CHECK(before.pwallstate==0 && before.pwallpos==0);
+    CHECK(before.pwallx==0 && before.pwally==0 && before.pwalldir==0);
+
+    Key(sc_UpArrow);CHECK(GameStep(1));
+    CHECK(player.x!=before.x || player.y!=before.y);
+
+    objtype *reserved=SpawnActor(10,10,&s_grdstand);
+    CHECK(reserved && actorat[10][10]==reserved);
+    staticblock[10][10]=true;tilemap[10][10]=1;
+    OpenDoor(0);MoveDoors();
+    pushable[10][10]=true;pwallstate=1;pwallpos=32;pwallx=10;pwally=10;pwalldir=east;
+    CHECK(actorat[10][10] && staticblock[10][10] && tilemap[10][10]==1);
+    CHECK(doorobjlist[0].action==dr_opening && doorobjlist[0].position==1024);
+    CHECK(pwallstate==1 && pwallpos==32 && pushable[10][10]);
+
+    GameStop();
+    CHECK(!CA_Map() && !objcount && !statcount && !doornum);
+    CHECK(!actorat[10][10] && !staticblock[10][10] && !pushable[10][10]);
+    CHECK(pwallstate==0 && pwallpos==0);
+    CHECK(pwallx==0 && pwally==0 && pwalldir==0);
+
+    CHECK(GameStart(0));
+    CaptureRestartState(&after);
+    CHECK(memcmp(&before,&after,sizeof(before))==0);
+    return after;
+}
+static void TestRestart(void)
+{
+    restart_state first=RunRestartCycle();
+    restart_state second=RunRestartCycle();
+    CHECK(memcmp(&first,&second,sizeof(first))==0);
+    GameStop();
+}
+/* Explicit scalar projection of authoritative state; no pointers or padding. */
+typedef struct {
+    int32_t x,y;
+    int tilex,tiley,angle;
+    uint32_t time_count;
+    int health,ammo,lives,keys,score;
+    int episode,mapon,difficulty,weapon;
+    int playstate;
+    unsigned objcount,statcount,doornum;
+    unsigned door_x,door_y,door_lock,door_position,door_ticcount;
+    int door_action;
+    bool door_vertical,door_reserved;
+    unsigned pwallstate,pwallpos;
+    w3r_byte door_tile;
+    bool player_next_null,player_state_null;
+} replay_state;
+static void CaptureReplayState(replay_state *s)
+{
+    const doorobj_t *d=&doorobjlist[0];
+    memset(s,0,sizeof(*s));
+    s->x=player.x;s->y=player.y;
+    s->tilex=player.tilex;s->tiley=player.tiley;s->angle=player.angle;
+    s->time_count=gamestate.TimeCount;
+    s->health=gamestate.health;s->ammo=gamestate.ammo;s->lives=gamestate.lives;
+    s->keys=gamestate.keys;s->score=gamestate.score;
+    s->episode=gamestate.episode;s->mapon=gamestate.mapon;
+    s->difficulty=gamestate.difficulty;s->weapon=gamestate.weapon;
+    s->playstate=(int)playstate;
+    s->objcount=objcount;s->statcount=statcount;s->doornum=doornum;
+    CHECK(doornum==1);
+    s->door_x=d->x;s->door_y=d->y;s->door_lock=d->lock;
+    s->door_vertical=d->vertical;s->door_action=(int)d->action;
+    s->door_position=d->position;s->door_ticcount=d->ticcount;
+    s->door_reserved=actorat[d->x][d->y]!=NULL;
+    s->door_tile=tilemap[d->x][d->y];
+    s->pwallstate=pwallstate;s->pwallpos=pwallpos;
+    s->player_next_null=player.next==NULL;s->player_state_null=player.state==NULL;
+}
+/* Presentation is copied from authoritative state after a tic; it never
+   steps the simulation. Sample() writes only caller-owned storage. */
+static void StepPresent(uint64_t t,unsigned every,wl_present_snapshot *sample,unsigned *captures)
+{
+    CHECK(GameStep(t));
+    if(every && t%every==0) {
+        WL_PresentCapture(t);
+        CHECK(WL_PresentSample(WL_TickNS(t),sample));
+        CHECK(sample->simulation_clock==gamestate.TimeCount);
+        ++*captures;
+    }
+}
+/* Same logical input script for every session, one 70 Hz tic per GameStep. */
+static void ReplayInputs(unsigned every,wl_present_snapshot *sample,unsigned *captures)
+{
+    uint64_t t=0;
+    IN_KeyEvent(sc_UpArrow,true); /* walk east up to the closed door */
+    for(unsigned i=0;i<40;++i) StepPresent(++t,every,sample,captures);
+    IN_KeyEvent(sc_UpArrow,false);
+    StepPresent(++t,every,sample,captures);
+    Key(sc_Space);StepPresent(++t,every,sample,captures); /* use the door */
+    IN_KeyEvent(sc_UpArrow,true);
+    for(unsigned i=0;i<10;++i) StepPresent(++t,every,sample,captures);
+    IN_KeyEvent(sc_UpArrow,false);
+    IN_KeyEvent(sc_RightArrow,true);
+    for(unsigned i=0;i<4;++i) StepPresent(++t,every,sample,captures);
+    IN_KeyEvent(sc_RightArrow,false);
+    IN_KeyEvent(sc_UpArrow,true);
+    for(unsigned i=0;i<4;++i) StepPresent(++t,every,sample,captures);
+    IN_KeyEvent(sc_UpArrow,false);
+    StepPresent(++t,every,sample,captures);
+    CHECK(t==61);
+}
+static void CheckReplayStatesEqual(const replay_state *a,const replay_state *b)
+{
+    CHECK(a->x==b->x && a->y==b->y);
+    CHECK(a->tilex==b->tilex && a->tiley==b->tiley && a->angle==b->angle);
+    CHECK(a->time_count==b->time_count);
+    CHECK(a->health==b->health && a->ammo==b->ammo && a->lives==b->lives);
+    CHECK(a->keys==b->keys && a->score==b->score);
+    CHECK(a->episode==b->episode && a->mapon==b->mapon);
+    CHECK(a->difficulty==b->difficulty && a->weapon==b->weapon);
+    CHECK(a->playstate==b->playstate);
+    CHECK(a->objcount==b->objcount && a->statcount==b->statcount && a->doornum==b->doornum);
+    CHECK(a->door_x==b->door_x && a->door_y==b->door_y && a->door_lock==b->door_lock);
+    CHECK(a->door_vertical==b->door_vertical && a->door_action==b->door_action);
+    CHECK(a->door_position==b->door_position && a->door_ticcount==b->door_ticcount);
+    CHECK(a->door_reserved==b->door_reserved && a->door_tile==b->door_tile);
+    CHECK(a->pwallstate==b->pwallstate && a->pwallpos==b->pwallpos);
+    CHECK(a->player_next_null==b->player_next_null && a->player_state_null==b->player_state_null);
+}
+static replay_state RunReplaySession(void)
+{
+    replay_state s;
+    unsigned captures=0;
+    IN_ClearKeysDown(); /* no pressed/held keys leak into a fresh session */
+    CHECK(GameStartMap(0,0,2,42)); /* fixed synthetic map, difficulty and seed */
+    CHECK(player.tilex==2 && player.tiley==2 && player.angle==0);
+    CHECK(gamestate.TimeCount==0 && gamestate.health==100 && gamestate.ammo==8);
+    ReplayInputs(0,NULL,&captures);
+    CHECK(captures==0);
+    CaptureReplayState(&s);
+    CHECK(s.time_count==61 && s.playstate==ex_playing);
+    CHECK(s.x!=2*TILEGLOBAL+32768); /* movement really changed authoritative state */
+    CHECK(s.door_action==dr_opening && s.door_position>0 && !s.door_reserved);
+    GameStop();
+    return s;
+}
+static void TestDeterministicReplay(void)
+{
+    replay_state first=RunReplaySession();
+    replay_state second=RunReplaySession();
+    CheckReplayStatesEqual(&first,&second);
+}
+static replay_state RunPresentationSession(unsigned every,unsigned *captures)
+{
+    replay_state s;
+    wl_present_snapshot sample;
+    IN_ClearKeysDown();
+    CHECK(GameStartMap(0,0,2,42));
+    CHECK(player.tilex==2 && player.tiley==2 && player.angle==0);
+    *captures=0;
+    ReplayInputs(every,&sample,captures);
+    CaptureReplayState(&s);
+    GameStop();
+    return s;
+}
+static void TestPresentationRateDeterminism(void)
+{
+    unsigned every_tick=0,every_fourth=0;
+    replay_state a=RunPresentationSession(1,&every_tick);
+    replay_state b=RunPresentationSession(4,&every_fourth);
+    CHECK(every_tick==61 && every_fourth==15); /* genuinely different schedules */
+    CheckReplayStatesEqual(&a,&b);
+}
+/* Characterisation of Classic rendering side effects: ThreeDRefresh (not the
+   read-only WL_PresentSample path) marks spotvis, actor visibility and picks
+   up bonuses from DrawScaleds. Everything here is headless and deterministic. */
+static void TestClassicRenderSideEffects(void)
+{
+    CHECK(GameStart(0));
+    /* Stand at the west edge of tile 3: its floor is ray-visible and the
+       bonus there is inside the original pickup projection distance. */
+    player.x=3*TILEGLOBAL;player.y=2*TILEGLOBAL+32768;
+    player.tilex=3;player.tiley=2;player.angle=0;
+    memset(spotvis,0,sizeof(spotvis)); /* controlled pre-render baseline */
+    objtype *visible=SpawnActor(4,2,&s_grdstand);
+    objtype *hidden=SpawnActor(10,10,&s_grdstand);
+    CHECK(visible && hidden);
+    visible->flags=0;hidden->flags=FL_VISABLE; /* render must flip both */
+    PlaceItemType(bo_clip,3,2);
+    CHECK(statcount==1 && statobjlist[0].shapenum!=-1 && gamestate.ammo==8);
+    CHECK(!spotvis[3][2] && !spotvis[4][2] && !spotvis[10][10]);
+    CHECK(!(visible->flags&FL_VISABLE) && (hidden->flags&FL_VISABLE));
+
+    CHECK(ThreeDRefresh()); /* the exact Classic rendering function */
+
+    CHECK(spotvis[3][2] && spotvis[4][2]); /* rays mark traversed floor cells */
+    CHECK(!spotvis[10][10]); /* cells behind the closed door stay invisible */
+    CHECK(visible->flags&FL_VISABLE && visible->active); /* visible actor marked */
+    CHECK(!(hidden->flags&FL_VISABLE)); /* hidden actor's stale flag cleared */
+    CHECK(gamestate.ammo==16 && statobjlist[0].shapenum==-1); /* GetBonus via render */
+    GameStop();
+}
 static void TestOwnedWalk(void)
 {
     CHECK(GameStart(0));int start=player.tilex,door=0;
@@ -240,7 +514,7 @@ static void TestMenuGame(void)
 int main(int argc,char **argv)
 {
     CHECK(argc>=2);TestExpand();TestFixed();TestScale();MM_Startup();CHECK(!GameProbe());CHECK(CA_Startup(argv[1]));
-    CHECK(VL_SetPalette(gamepal,768));TestInputMenu();TestWorld(argc==2,argc>3 ? argv[3] : NULL);if(argc==2) TestDoors();TestSimulation();if(argc>2) TestOwnedWalk();TestMenuGame();
+    CHECK(VL_SetPalette(gamepal,768));TestInputMenu();TestWorld(argc==2,argc>3 ? argv[3] : NULL);TestMapBounds();if(argc==2) TestDoors();TestSimulation();if(argc==2) TestRestart();if(argc==2) TestDeterministicReplay();if(argc==2) TestPresentationRateDeterminism();if(argc==2) TestClassicRenderSideEffects();if(argc>2) TestOwnedWalk();TestMenuGame();
     GameStop();CA_Shutdown();MM_Shutdown();CHECK(!MM_TotalBytes());
     puts("Original map/VSWAP, fixed-point ray/scaler, movement and menu/game tests passed.");return 0;
 }
