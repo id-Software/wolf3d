@@ -114,7 +114,6 @@ work. Platform and licensing exclusions are recorded separately below.
 | **A22** architecture/test review explicitly approved before R1/R2 | **PASS** | An independent ChatGPT reviewer has approved the architecture and testing baseline for the documented Linux synthetic scope. |
 
 Summary: **22 PASS, 0 FAIL, 0 PARTIAL, 0 NOT RUN** at the criterion level.
-The PARTIAL is the final approval gate, not a hidden test failure.
 
 ## Graphics evidence
 
@@ -237,6 +236,5 @@ The detailed proposed contract and sequence are in [`R0.7.md`](R0.7.md).
 - **Licensing/release clearance:** open R1 work, not misreported as R0 PASS.
 - **R0 milestone:** CLOSED for the documented Linux synthetic scope.
 
-Recommendation: approve R0 after reviewing the two R0.7 reports and explicitly
-recording A22. Do not merge PR #18 automatically and do not begin R1/R2
-implementation solely from this recommendation.
+R0 approval is complete for the documented Linux synthetic scope. PR #18
+remains awaiting final merge review. Do not begin R1/R2 implementation.
